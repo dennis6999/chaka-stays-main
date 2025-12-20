@@ -9,12 +9,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { User, Home, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '../contexts/AuthContext';
-import { useGoogleLogin } from '@react-oauth/google';
 import { DEV_SERVER_URL, getCurrentOrigin } from '@/config/google';
-import axios from 'axios';
+
 
 const SignUp: React.FC = () => {
-  const [userType, setUserType] = useState<'guest' | 'owner'>('guest');
+  const [userType, setUserType] = useState<'guest' | 'host'>('guest');
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -36,35 +35,38 @@ const SignUp: React.FC = () => {
   };
 
   const handleUserTypeChange = (value: string) => {
-    setUserType(value as 'guest' | 'owner');
+    setUserType(value as 'guest' | 'host');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Registration attempt with:', { userType, ...formData });
     setIsLoading(true);
 
     try {
       const data = {
         user_type: userType,
-        ...formData
+        ...formData,
+        // Map host specific fields to generic auth fields if needed
+        email: userType === 'host' ? formData.business_email : formData.email,
+        full_name: userType === 'host' ? formData.owner_name : formData.full_name,
+        phone: userType === 'host' ? formData.business_phone : formData.phone,
       };
-      console.log('Calling register function with data:', data);
-      const response = await register(data);
-      console.log('Registration response:', response);
-      
+      const { error } = await register(data);
+
+      if (error) {
+        throw error;
+      }
+
       toast({
-        title: 'Success',
-        description: 'Your account has been created successfully.',
+        title: 'Welcome to Chaka Stays',
+        description: 'Your account has been created successfully. Please check your email to confirm your account.',
       });
       navigate('/dashboard');
     } catch (error: any) {
-      console.error('Registration error details:', error);
-      console.error('Error response:', error.response);
-      
+      console.error('Registration error:', error);
       toast({
-        title: 'Error',
-        description: error.response?.data?.error || 'Registration failed. Please try again.',
+        title: 'Registration Error',
+        description: error.message || 'Registration failed. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -72,239 +74,192 @@ const SignUp: React.FC = () => {
     }
   };
 
-  const handleGoogleSignUp = useGoogleLogin({
-    flow: 'implicit',
-    onSuccess: async (response) => {
-      try {
-        setIsLoading(true);
-        console.log('Google sign up successful:', response);
 
-        // Get user info from Google
-        const userInfo = await axios.get(
-          'https://www.googleapis.com/oauth2/v3/userinfo',
-          {
-            headers: { Authorization: `Bearer ${response.access_token}` },
-          }
-        );
-        console.log('Google user info:', userInfo.data);
-
-        // Send the token to your backend
-        const backendResponse = await axios.post('http://localhost/api/google-auth.php', {
-          token: response.access_token,
-          user_info: userInfo.data,
-          user_type: userType,
-          origin: getCurrentOrigin()
-        });
-
-        console.log('Backend response:', backendResponse.data);
-
-        // Store the JWT token
-        localStorage.setItem('token', backendResponse.data.token);
-
-        toast({
-          title: 'Success',
-          description: 'Your account has been created with Google successfully.',
-        });
-        navigate('/dashboard');
-      } catch (error: any) {
-        console.error('Google sign up error:', error);
-        toast({
-          title: 'Error',
-          description: error.response?.data?.error || 'Google sign up failed. Please try again.',
-          variant: 'destructive',
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    onError: (error) => {
-      console.error('Google sign up error:', error);
-      toast({
-        title: 'Error',
-        description: 'Google sign up failed. Please try again.',
-        variant: 'destructive',
-      });
-    }
-  });
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <div className="flex-grow flex items-center justify-center bg-neutral/30 py-12">
-        <Card className="w-full max-w-md">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">
-              Create an Account
-            </CardTitle>
-            <CardDescription className="text-center">
-              Choose your account type to get started
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* User Type Selection */}
-              <Tabs value={userType} className="w-full" onValueChange={handleUserTypeChange}>
-                <TabsList className="grid w-full grid-cols-2 mb-4">
-                  <TabsTrigger value="guest">
-                    <User className="w-4 h-4 mr-2" />
-                    Guest
-                  </TabsTrigger>
-                  <TabsTrigger value="owner">
-                    <Home className="w-4 h-4 mr-2" />
-                    Property Owner
-                  </TabsTrigger>
-                </TabsList>
+    <div className="min-h-screen flex w-full">
+      {/* Form Side */}
+      <div className="flex-1 flex items-center justify-center p-8 lg:p-12 bg-background overflow-y-auto">
+        <div className="w-full max-w-md space-y-8 animate-fade-in py-8">
+          <div className="text-center space-y-2">
+            <h2 className="text-3xl font-serif font-bold tracking-tight text-primary">Begin Your Journey</h2>
+            <p className="text-muted-foreground font-light">Create your account to start exploring or hosting</p>
+          </div>
 
-                <TabsContent value="guest">
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="full_name">Full Name</Label>
-                      <Input 
-                        id="full_name" 
-                        name="full_name" 
-                        type="text" 
-                        placeholder="Enter your full name" 
-                        value={formData.full_name}
-                        onChange={handleChange}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input 
-                        id="email" 
-                        name="email" 
-                        type="email" 
-                        placeholder="Enter your email" 
-                        value={formData.email}
-                        onChange={handleChange}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone</Label>
-                      <Input 
-                        id="phone" 
-                        name="phone" 
-                        type="tel" 
-                        placeholder="Enter your phone number" 
-                        value={formData.phone}
-                        onChange={handleChange}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="password">Password</Label>
-                      <Input 
-                        id="password" 
-                        name="password" 
-                        type="password" 
-                        placeholder="Create a password" 
-                        value={formData.password}
-                        onChange={handleChange}
-                      />
-                    </div>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* User Type Selection */}
+            <Tabs value={userType} className="w-full" onValueChange={handleUserTypeChange}>
+              <TabsList className="grid w-full grid-cols-2 mb-8 h-12 bg-muted/50 p-1 rounded-xl">
+                <TabsTrigger value="guest" className="h-10 rounded-lg data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all font-medium">
+                  <User className="w-4 h-4 mr-2" />
+                  Traveler
+                </TabsTrigger>
+                <TabsTrigger value="host" className="h-10 rounded-lg data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all font-medium">
+                  <Home className="w-4 h-4 mr-2" />
+                  Property Owner
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="guest" className="animate-fade-in mt-0 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="full_name">Full Name</Label>
+                    <Input
+                      id="full_name"
+                      name="full_name"
+                      type="text"
+                      placeholder="e.g. John Doe"
+                      value={formData.full_name}
+                      onChange={handleChange}
+                      className="h-11 bg-white/50 border-input/60 focus:border-primary focus:ring-primary/10 transition-all font-light"
+                    />
                   </div>
-                </TabsContent>
-
-                <TabsContent value="owner">
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="business_name">Business Name</Label>
-                      <Input 
-                        id="business_name" 
-                        name="business_name" 
-                        type="text" 
-                        placeholder="Enter your business name" 
-                        value={formData.business_name}
-                        onChange={handleChange}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="owner_name">Owner Name</Label>
-                      <Input 
-                        id="owner_name" 
-                        name="owner_name" 
-                        type="text" 
-                        placeholder="Enter owner's full name" 
-                        value={formData.owner_name}
-                        onChange={handleChange}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="business_email">Business Email</Label>
-                      <Input 
-                        id="business_email" 
-                        name="business_email" 
-                        type="email" 
-                        placeholder="Enter business email" 
-                        value={formData.business_email}
-                        onChange={handleChange}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="business_phone">Business Phone</Label>
-                      <Input 
-                        id="business_phone" 
-                        name="business_phone" 
-                        type="tel" 
-                        placeholder="Enter business phone" 
-                        value={formData.business_phone}
-                        onChange={handleChange}
-                      />
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone</Label>
+                    <Input
+                      id="phone"
+                      name="phone"
+                      type="tel"
+                      placeholder="+254 7..."
+                      value={formData.phone}
+                      onChange={handleChange}
+                      className="h-11 bg-white/50 border-input/60 focus:border-primary focus:ring-primary/10 transition-all font-light"
+                    />
                   </div>
-                </TabsContent>
-              </Tabs>
-
-              <Button 
-                type="submit" 
-                className="w-full bg-primary hover:bg-primary/90"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating Account...
-                  </>
-                ) : (
-                  'Create Account'
-                )}
-              </Button>
-              <p className="text-sm text-center text-muted-foreground">
-                Already have an account?{' '}
-                <Link to="/auth" className="text-primary hover:underline">
-                  Sign in
-                </Link>
-              </p>
-
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <Separator className="w-full" />
                 </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">
-                    Or continue with
-                  </span>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email Address</Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    placeholder="name@example.com"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="h-11 bg-white/50 border-input/60 focus:border-primary focus:ring-primary/10 transition-all font-light"
+                  />
                 </div>
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Create Password</Label>
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    placeholder="At least 8 characters"
+                    value={formData.password}
+                    onChange={handleChange}
+                    className="h-11 bg-white/50 border-input/60 focus:border-primary focus:ring-primary/10 transition-all font-light"
+                  />
+                </div>
+              </TabsContent>
 
-              <Button 
-                type="button"
-                variant="outline" 
-                className="w-full"
-                onClick={() => handleGoogleSignUp()}
-                disabled={isLoading}
-              >
-                <img 
-                  src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" 
-                  alt="Google" 
-                  className="h-5 w-5 mr-2"
-                />
-                Google
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+              <TabsContent value="host" className="animate-fade-in mt-0 space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="business_name">Business Name</Label>
+                  <Input
+                    id="business_name"
+                    name="business_name"
+                    type="text"
+                    placeholder="e.g. Safari Stays Ltd"
+                    value={formData.business_name}
+                    onChange={handleChange}
+                    className="h-11 bg-white/50 border-input/60 focus:border-primary focus:ring-primary/10 transition-all font-light"
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="owner_name">Owner Name</Label>
+                    <Input
+                      id="owner_name"
+                      name="owner_name"
+                      type="text"
+                      placeholder="Full Name"
+                      value={formData.owner_name}
+                      onChange={handleChange}
+                      className="h-11 bg-white/50"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="business_phone">Business Phone</Label>
+                    <Input
+                      id="business_phone"
+                      name="business_phone"
+                      type="tel"
+                      placeholder="+254 7..."
+                      value={formData.business_phone}
+                      onChange={handleChange}
+                      className="h-11 bg-white/50"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="business_email">Business Email</Label>
+                  <Input
+                    id="business_email"
+                    name="business_email"
+                    type="email"
+                    placeholder="host@business.com"
+                    value={formData.business_email}
+                    onChange={handleChange}
+                    className="h-11 bg-white/50 border-input/60 focus:border-primary focus:ring-primary/10"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="host-password">Create Password</Label>
+                  <Input
+                    id="host-password"
+                    name="password"
+                    type="password"
+                    placeholder="At least 8 characters"
+                    value={formData.password}
+                    onChange={handleChange}
+                    className="h-11 bg-white/50 border-input/60 focus:border-primary focus:ring-primary/10 transition-all font-light"
+                  />
+                </div>
+              </TabsContent>
+            </Tabs>
+
+            <Button
+              type="submit"
+              className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-medium shadow-lg shadow-primary/20 transition-all hover:scale-[1.01]"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Creating Account...
+                </>
+              ) : (
+                'Create Account'
+              )}
+            </Button>
+
+          </form>
+        </div>
+      </div>
+
+      {/* Visual Side */}
+      <div className="hidden lg:flex lg:w-1/2 relative bg-[#1A2F25] overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?q=80&w=2670&auto=format&fit=crop')" }}
+        />
+        <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px]" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#1A2F25] via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/40 to-transparent" />
+
+        <div className="relative z-10 p-16 flex flex-col justify-between h-full text-white">
+          <Link to="/" className="text-2xl font-serif font-bold tracking-tight text-white/90">Chaka Stays</Link>
+          <div className="space-y-6 max-w-lg mb-20">
+            <h1 className="text-5xl font-serif font-medium leading-tight">Join our unique <br />community.</h1>
+            <p className="text-lg text-white/80 font-light leading-relaxed">
+              Whether you're seeking a serene escape or listing a hidden gem, Chaka Stays connects you with authentic experiences.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
-export default SignUp; 
+export default SignUp;

@@ -43,13 +43,12 @@ const services = [
 
 const ServicesSection = () => {
   return (
-    <section className="py-16 bg-white">
+    <section className="py-24 bg-background">
       <div className="chaka-container">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-dark mb-3">Our Services</h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            We offer a range of services to make your stay comfortable and memorable,
-            from room service to local recommendations.
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-4xl font-serif font-bold text-foreground mb-4">Curated Details</h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
+            Every aspect of your stay is thoughtfully considered to ensure an experience of absolute comfort.
           </p>
         </div>
 
@@ -57,13 +56,13 @@ const ServicesSection = () => {
           {services.map((service) => (
             <div
               key={service.id}
-              className="bg-neutral/30 p-6 rounded-xl hover:shadow-md transition-shadow group"
+              className="bg-card border border-border p-8 rounded-xl hover:shadow-lg transition-all duration-300 group"
             >
-              <div className="h-12 w-12 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-4 group-hover:bg-primary group-hover:text-white transition-colors">
-                <service.icon size={24} />
+              <div className="h-14 w-14 bg-secondary/10 text-secondary rounded-full flex items-center justify-center mb-6 group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-500">
+                <service.icon size={28} />
               </div>
-              <h3 className="text-xl font-semibold mb-2">{service.title}</h3>
-              <p className="text-gray-600">{service.description}</p>
+              <h3 className="text-xl font-serif font-semibold mb-3 text-foreground">{service.title}</h3>
+              <p className="text-muted-foreground leading-relaxed">{service.description}</p>
             </div>
           ))}
         </div>

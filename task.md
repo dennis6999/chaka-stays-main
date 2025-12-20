@@ -1,0 +1,58 @@
+# Task: Design Overhaul & Polish
+
+## Status Keys
+- [ ] Pending
+- [x] Completed
+- [-] Skipped
+
+## Design System Foundation
+- [x] Update Color Palette & Typography (`index.css`) <!-- id: 6 -->
+- [x] Refine Tailwind Configuration (`tailwind.config.ts`) <!-- id: 7 -->
+
+## Global Components
+- [x] Polish `Navbar` (Glassmorphism, Spacing) <!-- id: 8 -->
+- [x] Polish `Footer` (Dark theme, Layout) <!-- id: 9 -->
+
+## Page Components
+- [x] Redesign `Hero` Section (Immersive, Gradients) <!-- id: 10 -->
+- [x] Redesign `PropertyCard` (Elevated look, Badges) <!-- id: 11 -->
+- [x] Polish `FeaturedProperties` (Section layout) <!-- id: 12 -->
+- [x] Polish `Auth` & `SignUp` Pages (Premium split-screen) <!-- id: 13 -->
+
+## Verification
+- [x] Verify Mobile Responsiveness <!-- id: 14 -->
+## Feature Enhancements
+- [x] Add Form Fields to Dashboard (Beds, Baths, Amenities) <!-- id: 16 -->
+- [x] Update PropertyCard to show more details <!-- id: 17 -->
+- [x] Verify Dashboard Edit/Create Flow with new fields <!-- id: 18 -->
+
+## UI Polish & Cleanup
+- [x] Refine Property Details Page (Stats Icons, Glass Card) <!-- id: 19 -->
+- [x] Remove Google Auth from Login/Signup <!-- id: 20 -->
+
+## Responsiveness & Magic
+- [x] Enhance Site Responsiveness
+  - [x] Navbar: Modern mobile menu with smooth transitions
+  - [x] Hero: Adjust font sizes for mobile
+  - [x] SearchForm: Stack inputs on mobile
+  - [x] Property Detail: Stack layout, sticky booking bar on mobile
+  - [x] Dashboard: Responsive tabs and forms
+  - [x] Final Verification on Mobile Views/Tabs scrollable or stacked <!-- id: 24 -->
+- [ ] Verify functionality (Auth, Booking, Editing) on mobile view <!-- id: 25 -->
+
+## Properties Page Refinement
+- [x] Implement functional Filters (Type, Price, Guests) <!-- id: 26 -->
+- [x] Implement functional Sorting (Price, Rating, Recommended) <!-- id: 27 -->
+- [x] Add `property_type` to Database Schema <!-- id: 28 -->
+- [x] Improve Properties Page Design (Sticky filters, Transitions) <!-- id: 29 -->
+
+## Professional Mobile Polish
+- [x] Increase Max Price Range to 20,000 <!-- id: 30 -->
+- [x] Implement Mobile Filter Drawer/Sheet (Stop stacking filters) <!-- id: 31 -->
+- [x] Refine Mobile Typography & Spacing (Remove "rookie" feel) <!-- id: 32 -->
+- [x] Optimize Touch Targets & Interactions <!-- id: 33 -->
+
+## Mobile Menu Upgrade
+- [x] Replace basic mobile menu with premium `Sheet` drawer <!-- id: 34 -->
+- [x] Add animations and proper spacing to mobile nav links <!-- id: 35 -->
+- [x] Ensure "Host a Property" CTA is prominent on mobile <!-- id: 36 -->

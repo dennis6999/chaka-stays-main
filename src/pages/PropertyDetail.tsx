@@ -3,13 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger
 } from '@/components/ui/tabs';
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -20,7 +20,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { CalendarIcon, Check, Home, MapPin, Star, Users, Utensils, Wifi, Plus, Minus, Coffee, ShoppingBag, Heart, Share2, MessageSquare, Map, Loader2 } from 'lucide-react';
+import { CalendarIcon, Check, Home, MapPin, Star, Users, Utensils, Wifi, Plus, Minus, Coffee, ShoppingBag, Heart, Share2, MessageSquare, Map, Loader2, BedDouble, Bath } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -32,95 +32,45 @@ import { format } from 'date-fns';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import axios from 'axios';
 
-// Sample data for a specific property
-const propertyData = {
-  id: 1,
-  name: "Cozy Family Suite",
-  description: "Experience authentic Kenyan hospitality in this comfortable family suite located in the heart of Chaka Town. This well-appointed accommodation features modern amenities while preserving the traditional charm of the region.",
-  longDescription: "This beautiful family suite offers the perfect blend of comfort and local charm. The spacious bedroom features quality bedding and traditional décor, while the fully equipped kitchen allows you to prepare your own meals. Enjoy the cozy living area with comfortable seating and entertainment options. The property is conveniently located within walking distance to local markets, restaurants, and attractions in Chaka Town, including the famous Chaka Ranch near the Railway Station.",
-  location: "Chaka Town, Nyeri County, Kenya",
-  price: 85,
-  rating: 4.8,
-  reviewCount: 24,
-  images: [
-    "/lovable-uploads/31753fbf-d888-4d91-b12d-9754e8c01794.png",
-    "/lovable-uploads/37cb5f82-cc77-4f57-b3f3-3d4108ae1642.png",
-    "/lovable-uploads/f32e2236-eedd-4fcd-a373-1e1c9522c2b6.png"
-  ],
-  type: "Apartment",
-  guests: 4,
-  bedrooms: 2,
-  beds: 3,
-  baths: 1,
-  host: {
-    name: "Jane Kamau",
-    joined: "January 2020",
-    image: "https://randomuser.me/api/portraits/women/44.jpg",
-    rating: 4.9,
-    responseRate: 99,
-  },
-  amenities: [
-    "Fully equipped kitchen",
-    "Free WiFi",
-    "TV with cable",
-    "Washing machine",
-    "Fresh linens and towels",
-    "24/7 support",
-    "Free parking",
-    "Air conditioning"
-  ],
-  services: [
-    "Daily cleaning (optional)",
-    "Laundry service",
-    "Airport pickup",
-    "Breakfast (additional fee)",
-    "Local tours arrangement"
-  ],
-  propertyReviews: [
-    {
-      id: 1,
-      user: "Michael K.",
-      date: "March 2023",
-      content: "Excellent accommodation with all the comforts of home. The host was very welcoming and the location is perfect for exploring Chaka Town. Would definitely stay again!",
-      rating: 5,
-      avatar: "https://randomuser.me/api/portraits/men/32.jpg"
-    },
-    {
-      id: 2,
-      user: "Sarah W.",
-      date: "February 2023",
-      content: "Very clean and comfortable. The kitchen was well equipped and the bed was so comfortable! Great value for money.",
-      rating: 4,
-      avatar: "https://randomuser.me/api/portraits/women/65.jpg"
-    },
-    {
-      id: 3,
-      user: "John D.",
-      date: "January 2023",
-      content: "Perfect stay for our family. The kids loved it and we appreciated all the thoughtful touches. The host went above and beyond to make us feel welcome. We really enjoyed visiting Chaka Ranch during our stay!",
-      rating: 5,
-      avatar: "https://randomuser.me/api/portraits/men/45.jpg"
-    }
-  ]
-};
+
+import { api, Property } from '@/services/api';
+// ... other imports
 
 const PropertyDetail = () => {
   const { id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [property, setProperty] = React.useState<Property | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
   const [checkIn, setCheckIn] = React.useState<Date | undefined>(undefined);
   const [checkOut, setCheckOut] = React.useState<Date | undefined>(undefined);
   const [guests, setGuests] = React.useState(2);
   const [activeImage, setActiveImage] = React.useState(0);
   const [isLiked, setIsLiked] = React.useState(false);
   const [isBooking, setIsBooking] = React.useState(false);
-  
-  const property = propertyData;
-  
+
+  React.useEffect(() => {
+    const fetchProperty = async () => {
+      if (!id) return;
+      try {
+        setIsLoading(true);
+        const data = await api.getProperty(id);
+        setProperty(data);
+      } catch (error) {
+        console.error('Error fetching property:', error);
+        toast.error('Failed to load property details');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProperty();
+  }, [id]);
+
   const handleBookNow = async () => {
     if (!user) {
+      toast.error('Please sign in to book a property');
       navigate('/auth');
       return;
     }
@@ -130,348 +80,229 @@ const PropertyDetail = () => {
       return;
     }
 
+    if (!property) return;
+
+    if (user.id === property.host_id) {
+      toast.error("You cannot book your own property");
+      return;
+    }
+
     try {
       setIsBooking(true);
-      const token = localStorage.getItem('token');
-      if (!token) {
-        navigate('/auth');
-        return;
-      }
 
-      const response = await axios.post('/api/bookings.php', {
+      const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
+      const totalPrice = property.price_per_night * nights; // Add cleaning fee logic later
+
+      await api.createBooking({
         property_id: property.id,
-        check_in: format(checkIn, 'yyyy-MM-dd'),
-        check_out: format(checkOut, 'yyyy-MM-dd'),
-        guests: guests
-      }, {
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
+        guest_id: user.id,
+        check_in: checkIn,
+        check_out: checkOut,
+        total_price: totalPrice
       });
 
-      if (response.data && response.data.booking) {
-        toast.success('Booking created successfully!');
-        navigate('/dashboard');
-      } else {
-        throw new Error('Invalid response from server');
-      }
+      toast.success('Booking created successfully! Redirecting to dashboard...');
+      setTimeout(() => navigate('/dashboard'), 1500);
+
     } catch (error) {
       console.error('Error creating booking:', error);
-      if (axios.isAxiosError(error)) {
-        toast.error(error.response?.data?.error || 'Failed to create booking');
-        if (error.response?.status === 401) {
-          navigate('/auth');
-        }
-      } else {
-        toast.error('Failed to create booking');
-      }
+      toast.error('Failed to create booking');
     } finally {
       setIsBooking(false);
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!property) {
+    return (
+      <div className="min-h-screen flex items-center justify-center flex-col gap-4">
+        <h2 className="text-2xl font-bold">Property not found</h2>
+        <Button onClick={() => navigate('/')}>Return Home</Button>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
-      <main className="flex-grow bg-neutral/30 pb-16">
-        {/* Hero Section with Image Gallery */}
-        <div className="relative h-[60vh] md:h-[70vh] bg-gray-200 overflow-hidden">
-          <div className="absolute inset-0">
-              <img 
-              src={property.images[activeImage]} 
-                alt={property.name} 
-              className="w-full h-full object-cover transition-opacity duration-300"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = '/placeholder.svg';
-              }}
+      <main className="flex-grow pb-16 pt-24">
+        <div className="chaka-container">
+          {/* Header Section */}
+          <div className="mb-6">
+            <h1 className="text-3xl md:text-5xl font-serif font-bold text-foreground mb-4 leading-tight">{property.title}</h1>
+            <div className="flex flex-wrap items-center gap-4 text-muted-foreground text-sm font-medium">
+              <div className="flex items-center">
+                <Star className="h-4 w-4 text-secondary fill-secondary mr-1" />
+                <span className="text-foreground">{property.rating}</span>
+                <span className="mx-1">·</span>
+                <span className="underline decoration-muted-foreground/50">{property.review_count} reviews</span>
+              </div>
+              <span className="hidden sm:inline">·</span>
+              <div className="flex items-center">
+                <MapPin className="h-4 w-4 mr-1 text-primary" />
+                {property.location}
+              </div>
+              <div className="ml-auto flex gap-2">
+                <Button variant="ghost" size="sm" className="hover:bg-neutral/10" onClick={() => setIsLiked(!isLiked)}>
+                  <Heart className={`h-5 w-5 mr-2 ${isLiked ? 'fill-destructive text-destructive' : ''}`} /> Save
+                </Button>
+                <Button variant="ghost" size="sm" className="hover:bg-neutral/10">
+                  <Share2 className="h-5 w-5 mr-2" /> Share
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Image Grid */}
+          <div className="gap-2 rounded-2xl overflow-hidden shadow-sm h-[50vh] md:h-[60vh] mb-12 flex">
+            <div className={`relative h-full flex ${property.images.length > 1 ? 'w-1/2' : 'w-full'}`}>
+              <img
+                src={property.images[0] || "https://images.unsplash.com/photo-1512918760383-ed5341cf3e3b?auto=format&fit=crop&w=1600&q=80"}
+                alt="Main view"
+                className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
               />
             </div>
-          
-          {/* Image Gallery Navigation */}
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
-            {property.images.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setActiveImage(index)}
-                className={`w-3 h-3 rounded-full transition-all ${
-                  activeImage === index ? 'bg-white scale-125' : 'bg-white/50'
-                }`}
-                />
-            ))}
-              </div>
-          
-          {/* Action Buttons */}
-          <div className="absolute top-4 right-4 flex gap-2">
-            <Button 
-              variant="secondary" 
-              size="icon" 
-              className="bg-white/90 hover:bg-white"
-              onClick={() => setIsLiked(!isLiked)}
-            >
-              <Heart className={`h-5 w-5 ${isLiked ? 'fill-red-500 text-red-500' : 'text-gray-600'}`} />
-            </Button>
-            <Button 
-              variant="secondary" 
-              size="icon" 
-              className="bg-white/90 hover:bg-white"
-            >
-              <Share2 className="h-5 w-5 text-gray-600" />
-            </Button>
-          </div>
-        </div>
-        
-        <div className="chaka-container mt-8">
-          <div className="flex flex-col lg:flex-row gap-8">
-            {/* Property Details */}
-            <div className="lg:w-2/3">
-              <div className="flex flex-col md:flex-row justify-between items-start gap-4">
-                <div>
-                  <h1 className="text-3xl md:text-4xl font-bold text-dark">{property.name}</h1>
-                  <div className="flex flex-wrap items-center mt-2 gap-2">
-                    <div className="flex items-center text-sm bg-neutral/10 px-3 py-1 rounded-full">
-                      <MapPin className="h-4 w-4 text-primary mr-1" />
-                      <span>{property.location}</span>
-                    </div>
-                    <div className="flex items-center text-sm bg-neutral/10 px-3 py-1 rounded-full">
-                      <Users className="h-4 w-4 text-primary mr-1" />
-                      <span>{property.guests} guests</span>
-                    </div>
-                    <div className="flex items-center text-sm bg-neutral/10 px-3 py-1 rounded-full">
-                      <Home className="h-4 w-4 text-primary mr-1" />
-                      <span>{property.type}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center bg-white p-3 rounded-lg shadow-sm">
-                  <Star className="h-5 w-5 text-accent fill-accent mr-1" />
-                  <span className="font-semibold text-lg">{property.rating}</span>
-                  <span className="text-gray-500 ml-1">({property.reviewCount} reviews)</span>
-                </div>
-              </div>
-              
-              <Separator className="my-6" />
-              
-              <div className="prose max-w-none">
-                <p className="text-lg mb-4">{property.description}</p>
-                <p>{property.longDescription}</p>
-              </div>
-              
-              {/* Property Features */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
-                <div className="bg-white p-4 rounded-lg shadow-sm">
-                  <div className="text-2xl font-bold text-primary">{property.bedrooms}</div>
-                  <div className="text-sm text-gray-600">Bedrooms</div>
-                </div>
-                <div className="bg-white p-4 rounded-lg shadow-sm">
-                  <div className="text-2xl font-bold text-primary">{property.beds}</div>
-                  <div className="text-sm text-gray-600">Beds</div>
-                </div>
-                <div className="bg-white p-4 rounded-lg shadow-sm">
-                  <div className="text-2xl font-bold text-primary">{property.baths}</div>
-                  <div className="text-sm text-gray-600">Bathrooms</div>
-                </div>
-                <div className="bg-white p-4 rounded-lg shadow-sm">
-                  <div className="text-2xl font-bold text-primary">{property.guests}</div>
-                  <div className="text-sm text-gray-600">Max Guests</div>
-                </div>
-              </div>
-              
-              <Tabs defaultValue="amenities" className="mt-8">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="amenities">Amenities</TabsTrigger>
-                  <TabsTrigger value="services">Services</TabsTrigger>
-                  <TabsTrigger value="reviews">Reviews</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="amenities" className="mt-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {property.amenities.map((amenity, index) => (
-                      <div key={index} className="flex items-center space-x-2 bg-white p-3 rounded-lg shadow-sm">
-                        <Check className="h-5 w-5 text-secondary flex-shrink-0" />
-                        <span>{amenity}</span>
-                      </div>
-                    ))}
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="services" className="mt-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {property.services.map((service, index) => (
-                      <div key={index} className="bg-white p-4 rounded-lg border border-neutral/20">
-                      <div className="flex items-center mb-4">
-                        <Utensils className="h-6 w-6 text-primary mr-3" />
-                          <h3 className="font-semibold text-lg">{service}</h3>
-                      </div>
-                      <p className="text-gray-600">
-                          Enjoy this premium service during your stay. Contact the host for more details.
-                      </p>
-                      </div>
-                    ))}
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="reviews" className="mt-6">
-                  <div className="space-y-6">
-                    {property.propertyReviews.map((review) => (
-                      <div key={review.id} className="bg-white p-6 rounded-lg shadow-sm">
-                        <div className="flex items-center gap-4 mb-4">
-                            <img 
-                              src={review.avatar} 
-                              alt={review.user} 
-                            className="w-12 h-12 rounded-full"
-                            />
-                            <div>
-                            <div className="font-semibold">{review.user}</div>
-                            <div className="text-sm text-gray-500">{review.date}</div>
-                          </div>
-                          <div className="ml-auto flex items-center">
-                            <Star className="h-5 w-5 text-accent fill-accent mr-1" />
-                            <span className="font-semibold">{review.rating}</span>
-                          </div>
-                        </div>
-                        <p className="text-gray-600">{review.content}</p>
-                      </div>
-                    ))}
-                  </div>
-                </TabsContent>
-              </Tabs>
-              
-              {/* Location Section */}
-              <div className="mt-12">
-                <h2 className="text-2xl font-bold mb-4">Location</h2>
-                <div className="bg-white p-6 rounded-lg shadow-sm">
-                  <div className="aspect-video rounded-lg overflow-hidden mb-4 bg-gray-100 relative">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-center">
-                        <Map className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                        <p className="text-gray-500">Map view coming soon</p>
-                      </div>
-                    </div>
-                  </div>
-                      <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <MapPin className="h-5 w-5 text-primary" />
-                      <span>{property.location}</span>
-                        </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="bg-neutral/5 p-4 rounded-lg">
-                        <h3 className="font-semibold mb-2">Nearby Attractions</h3>
-                        <ul className="space-y-2 text-sm text-gray-600">
-                          <li>• Chaka Ranch (2.5 km)</li>
-                          <li>• Railway Station (1.2 km)</li>
-                          <li>• Local Markets (0.8 km)</li>
-                          <li>• Restaurants (0.5 km)</li>
-                        </ul>
-                        </div>
-                      <div className="bg-neutral/5 p-4 rounded-lg">
-                        <h3 className="font-semibold mb-2">Getting Around</h3>
-                        <ul className="space-y-2 text-sm text-gray-600">
-                          <li>• Public transport available nearby</li>
-                          <li>• Free parking on premises</li>
-                          <li>• Easy access to main roads</li>
-                          <li>• Walking distance to amenities</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Host Information */}
-              <div className="mt-12">
-                <h2 className="text-2xl font-bold mb-4">Your Host</h2>
-                <div className="bg-white p-6 rounded-lg shadow-sm">
-                  <div className="flex items-center gap-4">
-                  <img 
-                    src={property.host.image} 
-                    alt={property.host.name} 
-                      className="w-16 h-16 rounded-full"
+
+            {property.images.length > 1 && (
+              <div className="grid grid-rows-2 gap-2 h-full w-1/2">
+                <div className="relative h-full overflow-hidden">
+                  <img
+                    src={property.images[1]}
+                    alt="Interior"
+                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
                   />
-                  <div>
-                      <div className="font-semibold text-lg">{property.host.name}</div>
-                      <div className="text-sm text-gray-500">Joined {property.host.joined}</div>
-                    <div className="flex items-center mt-1">
-                      <Star className="h-4 w-4 text-accent fill-accent mr-1" />
-                        <span className="text-sm">{property.host.rating} ({property.host.responseRate}% response rate)</span>
-                      </div>
-                    </div>
-                    <Button className="ml-auto">Contact Host</Button>
-                  </div>
+                </div>
+                <div className="relative h-full overflow-hidden">
+                  <img
+                    src={property.images[2] || property.images[0]}
+                    alt="Details"
+                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
+                  />
+                  <Button variant="secondary" className="absolute bottom-4 right-4 text-xs bg-white text-black hover:bg-neutral">
+                    View all photos
+                  </Button>
                 </div>
               </div>
-            </div>
-            
-            {/* Booking Section */}
-            <div className="lg:w-1/3">
-              <div className="sticky top-4">
-                <div className="bg-white p-6 rounded-lg shadow-lg">
-                <div className="flex justify-between items-center mb-4">
-                  <div>
-                      <span className="text-2xl font-bold">${property.price}</span>
-                    <span className="text-gray-500"> / night</span>
-                  </div>
-                  <div className="flex items-center">
-                      <Star className="h-5 w-5 text-accent fill-accent mr-1" />
-                      <span className="font-semibold">{property.rating}</span>
-                      <span className="text-gray-500 ml-1">({property.reviewCount})</span>
-                  </div>
+            )}
+          </div>
+
+          <div className="flex flex-col lg:flex-row gap-16 relative pb-24 lg:pb-0">
+            {/* Left Content */}
+            <div className="lg:w-2/3 space-y-10">
+
+              {/* Quick Summary */}
+              <div className="flex flex-wrap gap-6 py-8 border-b border-border">
+                <div className="flex items-center gap-2 px-4 py-2 bg-secondary/10 rounded-full border border-secondary/20">
+                  <Users className="h-5 w-5 text-secondary" />
+                  <span className="font-medium text-secondary-foreground">{property.max_guests} guests</span>
                 </div>
-                
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>Check-in</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className="w-full justify-start text-left font-normal"
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                              {checkIn ? format(checkIn, "PPP") : "Select date"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <Calendar
-                            mode="single"
-                            selected={checkIn}
-                            onSelect={setCheckIn}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
+                <div className="flex items-center gap-2 px-4 py-2 bg-secondary/10 rounded-full border border-secondary/20">
+                  <Home className="h-5 w-5 text-secondary" />
+                  <span className="font-medium text-secondary-foreground">{property.bedrooms} bedrooms</span>
+                </div>
+                <div className="flex items-center gap-2 px-4 py-2 bg-secondary/10 rounded-full border border-secondary/20">
+                  <BedDouble className="h-5 w-5 text-secondary" />
+                  <span className="font-medium text-secondary-foreground">{property.beds} beds</span>
+                </div>
+                <div className="flex items-center gap-2 px-4 py-2 bg-secondary/10 rounded-full border border-secondary/20">
+                  <Bath className="h-5 w-5 text-secondary" />
+                  <span className="font-medium text-secondary-foreground">{property.baths} baths</span>
+                </div>
+              </div>
+
+              {/* Host Info */}
+              <div className="flex items-center gap-4 py-4 border-b border-border">
+                <img
+                  src={property.host?.avatar_url || "https://randomuser.me/api/portraits/lego/1.jpg"}
+                  alt={property.host?.full_name}
+                  className="w-14 h-14 rounded-full object-cover"
+                />
+                <div>
+                  <div className="font-semibold text-lg">Hosted by {property.host?.full_name || 'Host'}</div>
+                  <div className="text-sm text-muted-foreground">Joined {new Date(property.created_at).getFullYear()}</div>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="py-2 space-y-4">
+                <h3 className="font-serif text-2xl font-semibold">About this space</h3>
+                <p className="text-lg leading-relaxed text-muted-foreground">{property.description}</p>
+              </div>
+
+              {/* Amenities */}
+              <div className="py-6 border-t border-border">
+                <h3 className="font-serif text-2xl font-semibold mb-6">What this place offers</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {property.amenities.map((amenity, index) => (
+                    <div key={index} className="flex items-center gap-3">
+                      <div className="p-2 bg-neutral/10 rounded-full">
+                        <Check className="h-4 w-4 text-primary" />
+                      </div>
+                      <span className="text-base text-foreground/80">{amenity}</span>
                     </div>
-                      <div>
-                        <Label>Check-out</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className="w-full justify-start text-left font-normal"
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                              {checkOut ? format(checkOut, "PPP") : "Select date"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <Calendar
-                            mode="single"
-                            selected={checkOut}
-                            onSelect={setCheckOut}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+
+            {/* Desktop Booking Sidebar */}
+            <div className="hidden lg:block lg:w-1/3">
+              <div className="sticky top-24">
+                <div className="glass-card rounded-xl shadow-xl overflow-hidden p-6 border border-white/20">
+                  <div className="flex justify-between items-baseline mb-6">
+                    <div>
+                      <span className="text-2xl font-bold font-serif text-primary">KES {property.price_per_night}</span>
+                      <span className="text-muted-foreground"> night</span>
+                    </div>
+                    <div className="flex items-center text-sm font-medium">
+                      <Star className="h-4 w-4 bg-secondary text-white rounded-sm p-0.5 mr-1" />
+                      {property.rating} · <span className="text-muted-foreground ml-1 underline">{property.review_count} reviews</span>
                     </div>
                   </div>
-                  
-                  <div>
-                    <Label>Guests</Label>
+
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="p-3 border rounded-tl-lg rounded-bl-none border-neutral">
+                        <Label className="text-xs uppercase font-bold text-muted-foreground">Check-in</Label>
+                        <CalendarIcon className="h-4 w-4 text-muted-foreground mb-1 block md:hidden" />
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button className="w-full text-left font-normal text-sm pt-1 focus:outline-none">
+                              {checkIn ? format(checkIn, "dd/MM/yyyy") : "Add date"}
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar mode="single" selected={checkIn} onSelect={setCheckIn} initialFocus />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      <div className="p-3 border rounded-tr-lg rounded-br-none border-l-0 border-neutral">
+                        <Label className="text-xs uppercase font-bold text-muted-foreground">Check-out</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button className="w-full text-left font-normal text-sm pt-1 focus:outline-none">
+                              {checkOut ? format(checkOut, "dd/MM/yyyy") : "Add date"}
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="end">
+                            <Calendar mode="single" selected={checkOut} onSelect={setCheckOut} initialFocus />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </div>
+                    <div className="p-3 border rounded-b-lg border-t-0 border-neutral mt-0">
+                      <Label className="text-xs uppercase font-bold text-muted-foreground">Guests</Label>
                       <Select value={guests.toString()} onValueChange={(value) => setGuests(parseInt(value))}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select guests" />
+                        <SelectTrigger className="border-0 p-0 h-auto focus:ring-0">
+                          <SelectValue placeholder="1 guest" />
                         </SelectTrigger>
                         <SelectContent>
                           {[1, 2, 3, 4, 5, 6].map((num) => (
@@ -482,29 +313,54 @@ const PropertyDetail = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                    
-                    <Button 
-                      className="w-full" 
-                      size="lg"
+
+                    <Button
+                      className="w-full h-12 text-lg bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
                       onClick={handleBookNow}
                       disabled={isBooking}
                     >
                       {isBooking ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Booking...
+                          Checking availability...
                         </>
                       ) : (
-                        'Book Now'
+                        'Reserve'
                       )}
                     </Button>
-                    
-                    <div className="text-center text-sm text-gray-500">
+
+                    <div className="text-center text-sm text-muted-foreground py-2">
                       You won't be charged yet
-                  </div>
+                    </div>
+
+                    <div className="flex justify-between text-muted-foreground pt-4 border-t">
+                      <span>KES {property.price_per_night} x 5 nights</span>
+                      <span>KES {property.price_per_night * 5}</span>
+                    </div>
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Cleaning fee</span>
+                      <span>KES 2,500</span>
+                    </div>
+                    <div className="flex justify-between text-foreground font-bold pt-4 border-t text-lg">
+                      <span>Total before taxes</span>
+                      <span>KES {property.price_per_night * 5 + 2500}</span>
+                    </div>
+
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Mobile Fixed Bottom Bar */}
+            <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border z-40 flex items-center justify-between safe-area-bottom shadow-[0_-5px_10px_rgba(0,0,0,0.05)]">
+              <div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-xl font-bold font-serif text-primary">KES {property.price_per_night}</span>
+                  <span className="text-sm text-muted-foreground">/ night</span>
+                </div>
+                <div className="text-xs text-muted-foreground underline">{checkIn && checkOut ? `${Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))} nights` : 'Select dates'}</div>
+              </div>
+              <Button onClick={() => window.scrollTo({ top: 1000, behavior: 'smooth' })} className="bg-primary px-8">Reserve</Button>
             </div>
           </div>
         </div>

@@ -1,13 +1,7 @@
+// Configure axios defaults - not needed for mock but keeping for compatibility
 import axios from 'axios';
 
-// Update the API URL to match your XAMPP setup
-const API_URL = 'http://localhost/api';
-
-// Configure axios defaults
-axios.defaults.withCredentials = true;
-axios.defaults.headers.common['Content-Type'] = 'application/json';
-
-// Types
+// Mock Auth Service
 export interface User {
   id: number;
   user_type: 'guest' | 'owner';
@@ -33,52 +27,64 @@ export interface RegisterData {
   business_phone?: string;
 }
 
-// Auth service
+// Mock delays to simulate network requests
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 const authService = {
   // Register a new user
   async register(data: RegisterData): Promise<AuthResponse> {
-    try {
-      const response = await axios.post(`${API_URL}/register.php`, data);
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-      }
-      return response.data;
-    } catch (error: any) {
-      console.error('Registration error:', error);
-      throw error;
-    }
+    await delay(1000); // Simulate network delay
+
+    // Create mock user
+    const mockUser: User = {
+      id: Math.floor(Math.random() * 1000),
+      user_type: data.user_type,
+      email: data.email,
+      name: data.full_name || data.owner_name || 'New User'
+    };
+
+    const token = 'mock-jwt-token-' + Date.now();
+
+    // Store session
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(mockUser));
+
+    return {
+      message: 'Registration successful',
+      token,
+      user: mockUser
+    };
   },
 
   // Login user
   async login(email: string, password: string): Promise<AuthResponse> {
-    try {
-      const response = await axios.post(`${API_URL}/login.php`, { email, password });
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-      }
-      return response.data;
-    } catch (error: any) {
-      console.error('Login error:', error);
-      throw error;
-    }
+    await delay(800);
+
+    // Accept any login for demo purposes
+    const mockUser: User = {
+      id: 1,
+      user_type: 'guest',
+      email: email,
+      name: 'Demo User'
+    };
+
+    const token = 'mock-jwt-token-' + Date.now();
+
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(mockUser));
+
+    return {
+      message: 'Login successful',
+      token,
+      user: mockUser
+    };
   },
 
   // Get user profile
   async getProfile(): Promise<User> {
-    const token = localStorage.getItem('token');
-    if (!token) throw new Error('No token found');
-    
-    try {
-      const response = await axios.get(`${API_URL}/profile.php`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      return response.data.user;
-    } catch (error: any) {
-      console.error('Profile error:', error);
-      throw error;
-    }
+    const userStr = localStorage.getItem('user');
+    if (!userStr) throw new Error('No session found');
+    return JSON.parse(userStr);
   },
 
   // Logout user

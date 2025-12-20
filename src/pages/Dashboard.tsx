@@ -4,33 +4,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Calendar, Home, User, Plus, Edit, Trash } from 'lucide-react';
-import axios from 'axios';
+import { Loader2, Calendar, Home, User, Plus, Edit, Trash, MapPin } from 'lucide-react';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
+
 import { toast } from 'sonner';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
-interface Booking {
-  id: number;
-  property_id: number;
-  property_name: string;
-  check_in: string;
-  check_out: string;
-  status: string;
-  total_price: number;
-}
-
-interface Property {
-  id: number;
-  name: string;
-  location: string;
-  price: number;
-  status: string;
-  image_url: string;
-  description: string;
-}
+import { api, Property, Booking } from '../services/api';
 
 const Dashboard: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, loading, logout } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
@@ -41,89 +25,127 @@ const Dashboard: React.FC = () => {
     location: '',
     price: '',
     description: '',
-    image_url: ''
+    image_url: '',
+    max_guests: 2,
+    bedrooms: 1,
+    beds: 1,
+    baths: 1,
+    amenities: [] as string[]
   });
+  const [editingId, setEditingId] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (loading) return;
+
     if (!user) {
       navigate('/auth');
       return;
     }
     fetchDashboardData();
-  }, [activeTab, user, navigate]);
+  }, [activeTab, user, loading, navigate]);
 
   const fetchDashboardData = async () => {
+    if (!user) return;
+
     try {
       setIsLoading(true);
-      const token = localStorage.getItem('token');
-      
-      if (!token) {
-        navigate('/auth');
-        return;
-      }
 
       if (activeTab === 'bookings' || activeTab === 'overview') {
-        const response = await axios.get('/api/bookings.php', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setBookings(response.data.bookings || []);
+        const userBookings = await api.getUserBookings(user.id);
+        setBookings(userBookings);
       }
-      
+
       if (activeTab === 'properties' || activeTab === 'overview') {
-        const response = await axios.get('/api/properties.php', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setProperties(response.data.properties || []);
+        const hostProperties = await api.getHostProperties(user.id);
+        setProperties(hostProperties);
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       toast.error('Failed to fetch data');
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        navigate('/auth');
-      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleAddProperty = async (e: React.FormEvent) => {
+  const handleSaveProperty = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
+
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        navigate('/auth');
-        return;
+      const propertyData = {
+        host_id: user.id,
+        title: newProperty.name,
+        location: newProperty.location,
+        price_per_night: parseFloat(newProperty.price),
+        description: newProperty.description,
+        images: newProperty.image_url ? [newProperty.image_url] : [],
+        amenities: newProperty.amenities,
+        max_guests: newProperty.max_guests,
+        bedrooms: newProperty.bedrooms,
+        beds: newProperty.beds,
+        baths: newProperty.baths
+      };
+
+      if (editingId) {
+        const updated = await api.updateProperty(editingId, propertyData);
+        setProperties(properties.map(p => p.id === editingId ? updated : p));
+        toast.success('Property updated successfully');
+      } else {
+        const createdProperty = await api.createProperty(propertyData);
+        setProperties([...properties, createdProperty]);
+        toast.success('Property added successfully');
       }
 
-      await axios.post('/api/properties.php', newProperty, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      toast.success('Property added successfully');
-      setShowAddProperty(false);
-      setNewProperty({
-        name: '',
-        location: '',
-        price: '',
-        description: '',
-        image_url: ''
-      });
-      fetchDashboardData();
+      closePropertyForm();
     } catch (error) {
-      console.error('Error adding property:', error);
-      toast.error('Failed to add property');
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        navigate('/auth');
-      }
+      console.error('Error saving property:', error);
+      toast.error('Failed to save property');
     }
   };
+
+  const closePropertyForm = () => {
+    setShowAddProperty(false);
+    setEditingId(null);
+    setNewProperty({
+      name: '',
+      location: '',
+      price: '',
+      description: '',
+      image_url: '',
+      max_guests: 2,
+      bedrooms: 1,
+      beds: 1,
+      baths: 1,
+      amenities: []
+    });
+  };
+
+  const startEditing = (property: Property) => {
+    setNewProperty({
+      name: property.title,
+      location: property.location,
+      price: property.price_per_night.toString(),
+      description: property.description,
+      image_url: property.images?.[0] || '',
+      max_guests: property.max_guests || 2,
+      bedrooms: property.bedrooms || 1,
+      beds: property.beds || 1,
+      baths: property.baths || 1,
+      amenities: property.amenities || []
+    });
+    setEditingId(property.id);
+    setShowAddProperty(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
 
   const handleLogout = () => {
     logout();
     navigate('/');
   };
 
-  if (!user) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -131,312 +153,496 @@ const Dashboard: React.FC = () => {
     );
   }
 
+  if (!user) return null;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Header */}
-      <header className="bg-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <Link to="/" className="flex items-center space-x-2 hover:text-primary transition-colors">
-              <Home className="h-8 w-8 text-blue-600" />
-              <h1 className="text-2xl font-bold text-gray-900">Chaka Stays Dashboard</h1>
-            </Link>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Avatar className="h-10 w-10 border-2 border-blue-500">
-              <AvatarImage src={user.picture} />
-              <AvatarFallback>{user.name?.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <Button variant="outline" onClick={handleLogout} className="hover:bg-red-100">
-              Logout
-            </Button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen flex flex-col bg-background">
+      <Navbar />
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-white p-1 rounded-lg shadow">
-            <TabsTrigger value="overview" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">
-              Overview
-            </TabsTrigger>
-            <TabsTrigger value="bookings" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">
-              Bookings
-            </TabsTrigger>
-            <TabsTrigger value="properties" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">
-              Properties
-            </TabsTrigger>
-            <TabsTrigger value="profile" className="data-[state=active]:bg-blue-500 data-[state=active]:text-white">
-              Profile
-            </TabsTrigger>
-            </TabsList>
-            
-            {/* Overview Tab */}
-            <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow">
-                <CardHeader className="bg-blue-50 rounded-t-lg">
-                  <CardTitle className="flex items-center space-x-2">
-                    <Calendar className="h-5 w-5" />
-                    <span>Total Bookings</span>
-                    </CardTitle>
-                  </CardHeader>
-                <CardContent className="pt-6">
-                  <p className="text-3xl font-bold text-blue-600">{bookings.length}</p>
-                  </CardContent>
-                </Card>
-              <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow">
-                <CardHeader className="bg-green-50 rounded-t-lg">
-                  <CardTitle className="flex items-center space-x-2">
-                    <Home className="h-5 w-5" />
-                    <span>Active Properties</span>
-                    </CardTitle>
-                  </CardHeader>
-                <CardContent className="pt-6">
-                  <p className="text-3xl font-bold text-green-600">
-                    {properties.filter(p => p.status === 'active').length}
-                  </p>
-                  </CardContent>
-                </Card>
-              <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow">
-                <CardHeader className="bg-purple-50 rounded-t-lg">
-                  <CardTitle className="flex items-center space-x-2">
-                    <span>Total Revenue</span>
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  <p className="text-3xl font-bold text-purple-600">
-                    ${bookings.reduce((sum, booking) => sum + booking.total_price, 0).toFixed(2)}
-                  </p>
-                </CardContent>
-              </Card>
+      <main className="flex-grow pt-24 pb-16">
+        <div className="chaka-container">
+          <div className="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
+            <div>
+              <h1 className="text-3xl md:text-5xl font-serif font-bold text-foreground">Dashboard</h1>
+              <p className="text-muted-foreground mt-2">Welcome back, {user.name}!</p>
             </div>
-
-            {/* Recent Bookings */}
-            <Card className="bg-white shadow-lg">
-              <CardHeader>
-                <CardTitle>Recent Bookings</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                  {bookings.slice(0, 5).map((booking) => (
-                    <div key={booking.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div>
-                        <h3 className="font-semibold">{booking.property_name}</h3>
-                        <p className="text-sm text-gray-500">
-                          {new Date(booking.check_in).toLocaleDateString()} -{' '}
-                          {new Date(booking.check_out).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold">${booking.total_price}</p>
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
-                          booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
-                          {booking.status}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                    </div>
-                  </CardContent>
-                </Card>
-          </TabsContent>
-                
-          {/* Bookings Tab */}
-          <TabsContent value="bookings">
-            {isLoading ? (
-              <div className="flex justify-center">
-                <Loader2 className="h-8 w-8 animate-spin" />
-              </div>
-            ) : (
-                    <div className="space-y-4">
-                {bookings.map((booking) => (
-                  <Card key={booking.id} className="bg-white shadow-lg hover:shadow-xl transition-shadow">
-                    <CardContent className="pt-6">
-                      <div className="flex justify-between items-start">
-                          <div>
-                          <h3 className="font-semibold text-lg">{booking.property_name}</h3>
-                          <p className="text-sm text-gray-500">
-                            {new Date(booking.check_in).toLocaleDateString()} -{' '}
-                            {new Date(booking.check_out).toLocaleDateString()}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                          <p className="font-semibold text-lg">${booking.total_price}</p>
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
-                            booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                              {booking.status}
-                          </span>
-                        </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                ))}
-              </div>
-            )}
-            </TabsContent>
-            
-            {/* Properties Tab */}
-            <TabsContent value="properties">
-            <div className="flex justify-end mb-4">
-              <Button onClick={() => setShowAddProperty(true)} className="bg-blue-600 hover:bg-blue-700">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Property
+            <div className="flex items-center gap-3">
+              <Button variant="outline" onClick={handleLogout} className="border-destructive/20 text-destructive hover:bg-destructive/10 hover:text-destructive">
+                Log out
+              </Button>
+              <Button onClick={() => {
+                setShowAddProperty(true);
+                setEditingId(null); // Ensure we are in create mode
+                setNewProperty({
+                  name: '',
+                  location: '',
+                  price: '',
+                  description: '',
+                  image_url: '',
+                  max_guests: 2,
+                  bedrooms: 1,
+                  beds: 1,
+                  baths: 1,
+                  amenities: []
+                });
+                setActiveTab('properties');
+              }} className="bg-primary hover:bg-primary/90">
+                <Plus className="h-4 w-4 mr-2" /> New Listing
               </Button>
             </div>
+          </div>
 
-            {showAddProperty && (
-              <Card className="mb-6 bg-white shadow-lg">
-                <CardContent className="pt-6">
-                  <form onSubmit={handleAddProperty} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">Property Name</label>
-                        <input
-                          type="text"
-                          value={newProperty.name}
-                          onChange={(e) => setNewProperty({...newProperty, name: e.target.value})}
-                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                          required
-                        />
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+            <TabsList className="w-full justify-start border-b border-border bg-transparent p-0 h-auto rounded-none space-x-6 overflow-x-auto">
+              <TabsTrigger
+                value="overview"
+                className="rounded-none border-b-2 border-transparent px-4 py-3 font-serif font-medium text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent transition-all text-lg whitespace-nowrap"
+              >
+                Overview
+              </TabsTrigger>
+              <TabsTrigger
+                value="bookings"
+                className="rounded-none border-b-2 border-transparent px-4 py-3 font-serif font-medium text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent transition-all text-lg whitespace-nowrap"
+              >
+                Bookings
+              </TabsTrigger>
+              <TabsTrigger
+                value="properties"
+                className="rounded-none border-b-2 border-transparent px-4 py-3 font-serif font-medium text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent transition-all text-lg whitespace-nowrap"
+              >
+                My Properties
+              </TabsTrigger>
+              <TabsTrigger
+                value="profile"
+                className="rounded-none border-b-2 border-transparent px-4 py-3 font-serif font-medium text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent transition-all text-lg whitespace-nowrap"
+              >
+                Profile
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Overview Tab */}
+            <TabsContent value="overview" className="space-y-8 animate-fade-in">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="bg-card border-border shadow-sm hover:shadow-md transition-all">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">Total Bookings</CardTitle>
+                    <Calendar className="h-4 w-4 text-primary" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold font-serif">{bookings.length}</div>
+                    <p className="text-xs text-muted-foreground mt-1">+20% from last month</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-card border-border shadow-sm hover:shadow-md transition-all">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">Active Listings</CardTitle>
+                    <Home className="h-4 w-4 text-secondary" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold font-serif">
+                      {properties.length}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">Total Listed Properties</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-card border-border shadow-sm hover:shadow-md transition-all">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">Revenue</CardTitle>
+                    <div className="text-primary font-bold">KES</div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold font-serif">
+                      KES {bookings.reduce((sum, booking) => sum + booking.total_price, 0).toLocaleString()}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">+12% from last month</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Recent Bookings */}
+              <div className="space-y-4">
+                <h3 className="text-xl font-serif font-bold">Recent Activity</h3>
+                <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+                  <div className="grid gap-0">
+                    {bookings.slice(0, 5).map((booking, i) => (
+                      <div key={booking.id} className={`flex items-center justify-between p-4 ${i !== bookings.length - 1 ? 'border-b border-border' : ''} hover:bg-neutral/5 transition-colors`}>
+                        <div className="flex items-center gap-4">
+                          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-serif font-bold">
+                            {booking.properties?.title.charAt(0)}
+                          </div>
+                          <div>
+                            <h4 className="font-semibold">{booking.properties?.title}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              {new Date(booking.check_in).toLocaleDateString()} -{' '}
+                              {new Date(booking.check_out).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold">KES {booking.total_price.toLocaleString()}</p>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                            booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-red-100 text-red-800'
+                            }`}>
+                            {booking.status}
+                          </span>
+                        </div>
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">Location</label>
-                        <input
-                          type="text"
-                          value={newProperty.location}
-                          onChange={(e) => setNewProperty({...newProperty, location: e.target.value})}
-                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">Price per Night</label>
-                        <input
-                          type="number"
-                          value={newProperty.price}
-                          onChange={(e) => setNewProperty({...newProperty, price: e.target.value})}
-                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                          required
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* Bookings Tab */}
+            <TabsContent value="bookings" className="animate-fade-in">
+              {isLoading ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : (
+                <div className="grid gap-4">
+                  {bookings.map((booking) => (
+                    <Card key={booking.id} className="bg-card border-border shadow-sm hover:shadow-md transition-all">
+                      <CardContent className="p-6">
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                          <div className="flex items-center gap-4">
+                            <div className="h-12 w-12 rounded-lg bg-neutral/10 flex items-center justify-center">
+                              <Calendar className="h-6 w-6 text-muted-foreground" />
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-lg">{booking.properties?.title}</h3>
+                              <p className="text-sm text-muted-foreground">ID: #{booking.id}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap gap-6 items-center">
+                            <div className="text-sm">
+                              <span className="text-muted-foreground block text-xs uppercase tracking-wider">Dates</span>
+                              {new Date(booking.check_in).toLocaleDateString()} - {new Date(booking.check_out).toLocaleDateString()}
+                            </div>
+                            <div className="text-sm">
+                              <span className="text-muted-foreground block text-xs uppercase tracking-wider">Total</span>
+                              <span className="font-semibold text-lg">KES {booking.total_price.toLocaleString()}</span>
+                            </div>
+                            <div>
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                                booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-red-100 text-red-800'
+                                }`}>
+                                {booking.status}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
+            {/* Properties Tab */}
+            <TabsContent value="properties" className="animate-fade-in">
+              {(showAddProperty || editingId) && (
+                <Card className="mb-8 border-primary/20 bg-primary/5">
+                  <CardHeader>
+                    <CardTitle>{editingId ? 'Edit Property' : 'Add New Property'}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={handleSaveProperty} className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Property Name</label>
+                          <input
+                            type="text"
+                            value={newProperty.name}
+                            onChange={(e) => setNewProperty({ ...newProperty, name: e.target.value })}
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            required
                           />
                         </div>
-                            <div>
-                        <label className="block text-sm font-medium text-gray-700">Image URL</label>
-                        <input
-                          type="text"
-                          value={newProperty.image_url}
-                          onChange={(e) => setNewProperty({...newProperty, image_url: e.target.value})}
-                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        />
-                              </div>
-                            </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Description</label>
-                      <textarea
-                        value={newProperty.description}
-                        onChange={(e) => setNewProperty({...newProperty, description: e.target.value})}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        rows={3}
-                      />
-                    </div>
-                    <div className="flex justify-end space-x-2">
-                      <Button type="button" variant="outline" onClick={() => setShowAddProperty(false)}>
-                        Cancel
-                              </Button>
-                      <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                        Add Property
-                              </Button>
-                            </div>
-                  </form>
-                </CardContent>
-              </Card>
-            )}
-                          
-            {isLoading ? (
-                              <div className="flex justify-center">
-                <Loader2 className="h-8 w-8 animate-spin" />
-                              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {properties.map((property) => (
-                  <Card key={property.id} className="bg-white shadow-lg hover:shadow-xl transition-shadow">
-                    <CardContent className="pt-6">
-                      <img
-                        src={property.image_url || 'https://via.placeholder.com/300x200'}
-                        alt={property.name}
-                        className="w-full h-48 object-cover rounded-lg mb-4"
-                      />
-                      <h3 className="font-semibold text-lg">{property.name}</h3>
-                      <p className="text-sm text-gray-500">{property.location}</p>
-                      <div className="flex justify-between items-center mt-4">
-                        <p className="font-semibold text-lg">${property.price}/night</p>
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          property.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {property.status}
-                        </span>
-                            </div>
-                      <div className="mt-4 flex justify-end space-x-2">
-                        <Button variant="outline" size="sm">
-                          <Edit className="h-4 w-4 mr-2" />
-                          Edit
-                        </Button>
-                        <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                          <Trash className="h-4 w-4 mr-2" />
-                          Delete
-                        </Button>
-                              </div>
-                    </CardContent>
-                  </Card>
-                ))}
-                            </div>
-            )}
-          </TabsContent>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Location</label>
+                          <input
+                            type="text"
+                            value={newProperty.location}
+                            onChange={(e) => setNewProperty({ ...newProperty, location: e.target.value })}
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            required
+                          />
+                        </div>
+                      </div>
 
-          {/* Profile Tab */}
-          <TabsContent value="profile">
-            <Card className="bg-white shadow-lg">
-              <CardContent className="pt-6">
-                <div className="space-y-6">
-                  <div className="flex items-center space-x-6">
-                    <Avatar className="h-24 w-24 border-4 border-blue-500">
-                      <AvatarImage src={user.picture} />
-                      <AvatarFallback>{user.name?.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h3 className="text-2xl font-semibold">{user.name}</h3>
-                      <p className="text-gray-500">{user.email}</p>
-                            </div>
-                          </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="font-medium text-gray-700 mb-2">Account Information</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Price (KES)</label>
+                          <input
+                            type="number"
+                            value={newProperty.price}
+                            onChange={(e) => setNewProperty({ ...newProperty, price: e.target.value })}
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Max Guests</label>
+                          <input
+                            type="number"
+                            value={newProperty.max_guests}
+                            onChange={(e) => setNewProperty({ ...newProperty, max_guests: parseInt(e.target.value) || 1 })}
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            min="1"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Bedrooms</label>
+                          <input
+                            type="number"
+                            value={newProperty.bedrooms}
+                            onChange={(e) => setNewProperty({ ...newProperty, bedrooms: parseInt(e.target.value) || 1 })}
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            min="0"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Beds</label>
+                          <input
+                            type="number"
+                            value={newProperty.beds}
+                            onChange={(e) => setNewProperty({ ...newProperty, beds: parseInt(e.target.value) || 1 })}
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            min="1"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Baths</label>
+                          <input
+                            type="number"
+                            value={newProperty.baths}
+                            onChange={(e) => setNewProperty({ ...newProperty, baths: parseInt(e.target.value) || 1 })}
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            min="1"
+                            required
+                          />
+                        </div>
+                      </div>
+
                       <div className="space-y-2">
-                        <p><span className="font-medium">User Type:</span> {user.user_type}</p>
-                        <p><span className="font-medium">Member Since:</span> {new Date().toLocaleDateString()}</p>
+                        <label className="text-sm font-medium">Amenities</label>
+                        <div className="flex flex-wrap gap-3 p-3 border rounded-md bg-neutral/5">
+                          {['Wifi', 'Parking', 'Pool', 'Gym', 'Air Conditioning', 'Kitchen', 'TV', 'Washer', 'Garden', 'Security'].map(amenity => (
+                            <label key={amenity} className="flex items-center gap-2 text-sm cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={newProperty.amenities.includes(amenity)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setNewProperty({ ...newProperty, amenities: [...newProperty.amenities, amenity] });
+                                  } else {
+                                    setNewProperty({ ...newProperty, amenities: newProperty.amenities.filter(a => a !== amenity) });
+                                  }
+                                }}
+                                className="rounded border-gray-300 text-primary focus:ring-primary"
+                              />
+                              {amenity}
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Property Image</label>
+                        <div className="flex gap-2">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              try {
+                                toast.info('Uploading image...');
+                                const url = await api.uploadImage(file);
+                                setNewProperty((prev) => ({ ...prev, image_url: url }));
+                                toast.success('Image uploaded successfully');
+                              } catch (error: any) {
+                                console.error('Upload failed:', error);
+                                toast.error(`Upload failed: ${error.message || 'Unknown error'}`);
+                              }
+                            }}
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-muted-foreground file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          />
+                        </div>
+                        {newProperty.image_url && (
+                          <div className="text-xs text-green-600 truncate mt-1">
+                            Image uploaded: ...{newProperty.image_url.slice(-20)}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Description</label>
+                        <textarea
+                          value={newProperty.description}
+                          onChange={(e) => setNewProperty({ ...newProperty, description: e.target.value })}
+                          className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          rows={3}
+                        />
+                      </div>
+                      <div className="flex justify-end space-x-2">
+                        <Button type="button" variant="outline" onClick={closePropertyForm}>
+                          Cancel
+                        </Button>
+                        <Button type="submit">
+                          {editingId ? 'Update Listing' : 'Save Listing'}
+                        </Button>
+                      </div>
+                    </form>
+                  </CardContent>
+                </Card>
+              )}
+
+              {isLoading ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {properties.map((property) => (
+                    <Card key={property.id} className="group bg-card border-border overflow-hidden hover:shadow-xl transition-all duration-300">
+                      <div className="relative h-48 overflow-hidden">
+                        <img
+                          src={property.images?.[0] || 'https://via.placeholder.com/300x200'}
+                          alt={property.title}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      </div>
+                      <CardContent className="p-5">
+                        <h3 className="font-serif font-bold text-xl mb-1">{property.title}</h3>
+                        <p className="text-sm text-muted-foreground mb-4 flex items-center">
+                          <MapPin className="h-3 w-3 mr-1" /> {property.location}
+                        </p>
+
+                        <div className="flex justify-between items-end">
+                          <div>
+                            <span className="text-lg font-bold text-primary">KES {property.price_per_night}</span>
+                            <span className="text-xs text-muted-foreground">/night</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => startEditing(property)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="outline" size="sm" className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={async () => {
+                              if (confirm('Are you sure you want to delete this property?')) {
+                                try {
+                                  await api.deleteProperty(property.id);
+                                  setProperties(properties.filter(p => p.id !== property.id));
+                                  toast.success('Property deleted successfully');
+                                } catch (error) {
+                                  console.error('Error deleting property:', error);
+                                  toast.error('Failed to delete property');
+                                }
+                              }
+                            }}>
+                              <Trash className="h-4 w-4" />
+                            </Button>
                           </div>
                         </div>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="font-medium text-gray-700 mb-2">Contact Information</h4>
-                      <div className="space-y-2">
-                        <p><span className="font-medium">Email:</span> {user.email}</p>
-                        {user.phone && <p><span className="font-medium">Phone:</span> {user.phone}</p>}
+                      </CardContent>
+                    </Card>
+                  ))}
+
+                  <div
+                    onClick={() => setShowAddProperty(true)}
+                    className="border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center h-full min-h-[300px] cursor-pointer hover:border-primary hover:bg-primary/5 transition-all group"
+                  >
+                    <div className="h-12 w-12 rounded-full bg-neutral/10 flex items-center justify-center group-hover:scale-110 transition-transform mb-4">
+                      <Plus className="h-6 w-6 text-muted-foreground group-hover:text-primary" />
+                    </div>
+                    <h3 className="font-semibold text-lg text-muted-foreground group-hover:text-primary">Add New Property</h3>
+                  </div>
+                </div>
+              )}
+            </TabsContent>
+
+            {/* Profile Tab */}
+            <TabsContent value="profile" className="animate-fade-in">
+              <div className="max-w-3xl">
+                <Card className="bg-card border-border shadow-sm">
+                  <CardHeader>
+                    <CardTitle>My Profile</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-8">
+                    <div className="flex flex-col md:flex-row items-center gap-8">
+                      <Avatar className="h-32 w-32 border-4 border-background shadow-xl">
+                        <AvatarImage src={user.avatar_url} />
+                        <AvatarFallback className="text-4xl bg-primary text-primary-foreground">{user.name?.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div className="text-center md:text-left space-y-2">
+                        <h3 className="text-3xl font-serif font-bold">{user.name}</h3>
+                        <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+                          <span className="bg-secondary/20 text-secondary-foreground px-3 py-1 rounded-full text-sm font-medium">
+                            {user.user_type === 'host' ? 'Host' : 'Guest'}
+                          </span>
+                          <span className="bg-neutral/10 text-muted-foreground px-3 py-1 rounded-full text-sm">
+                            Member since 2024
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  </div>
-                </CardContent>
-              </Card>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-border">
+                      <div className="space-y-4">
+                        <h4 className="text-lg font-semibold flex items-center">
+                          <User className="h-5 w-5 mr-2 text-primary" /> Account Details
+                        </h4>
+                        <div className="space-y-3 bg-neutral/5 p-4 rounded-lg">
+                          <div>
+                            <span className="text-xs text-muted-foreground uppercase tracking-wider block">Full Name</span>
+                            <span className="font-medium">{user.name}</span>
+                          </div>
+                          <div>
+                            <span className="text-xs text-muted-foreground uppercase tracking-wider block">Email Address</span>
+                            <span className="font-medium">{user.email}</span>
+                          </div>
+                          <div>
+                            <span className="text-xs text-muted-foreground uppercase tracking-wider block">Account Type</span>
+                            <span className="font-medium capitalize">{user.user_type}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <h4 className="text-lg font-semibold flex items-center">
+                          <Home className="h-5 w-5 mr-2 text-primary" /> Contact Info
+                        </h4>
+                        <div className="space-y-3 bg-neutral/5 p-4 rounded-lg">
+                          <div>
+                            <span className="text-xs text-muted-foreground uppercase tracking-wider block">Phone Number</span>
+                            <span className="font-medium">{user.phone || 'Not provided'}</span>
+                          </div>
+                          <div>
+                            <span className="text-xs text-muted-foreground uppercase tracking-wider block">Location</span>
+                            <span className="font-medium">Chaka, Kenya</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end pt-4">
+                      <Button variant="outline">Edit Profile</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
           </Tabs>
+        </div>
       </main>
+      <Footer />
     </div>
   );
 };

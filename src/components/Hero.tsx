@@ -1,65 +1,62 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { MapPin, Search, Home } from 'lucide-react';
+import { Search, ArrowRight } from 'lucide-react';
 import SearchForm from './SearchForm';
 
 const Hero = () => {
   return (
-    <div className="relative min-h-[500px] sm:min-h-[600px] md:min-h-[700px] flex flex-col items-center overflow-hidden">
-      {/* Background Image with Overlay */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center transition-transform duration-500" 
+    <div className="relative h-screen min-h-[600px] flex items-center justify-center overflow-hidden">
+      {/* Background Image with Parallax-like effect */}
+      <div
+        className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 scale-105"
         style={{
-          backgroundImage: "url('https://images.unsplash.com/photo-1580235078962-43ab08e8f04d?q=80&w=1770&auto=format&fit=crop')",
-          backgroundPosition: "center",
-          filter: "brightness(0.65)"
-        }} 
-      />
-      
-      {/* Colorful Gradient Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/30 via-transparent to-accent/30" />
-      
+          backgroundImage: "url('https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?q=80&w=2649&auto=format&fit=crop')", // Lush forest resort
+        }}
+      >
+        <div className="absolute inset-0 bg-black/30 backdrop-blur-[1px]" /> {/* Subtle blur for depth */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#1A2F25]/90 via-black/20 to-black/30" />
+      </div>
+
       {/* Content */}
-      <div className="chaka-container relative z-10 px-4 sm:px-6 py-8 sm:py-12 flex flex-col items-center">
-        <div className="max-w-3xl w-full">
-          <div className="inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 bg-primary/80 text-white rounded-full mb-4 sm:mb-6 backdrop-blur-sm shadow-lg">
-            <MapPin className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-            <span className="text-sm sm:text-base font-medium">Chaka Town, Nyeri County, Kenya</span>
+      <div className="relative z-10 w-full max-w-[1400px] mx-auto px-6 sm:px-8 lg:px-12 pt-20">
+        <div className="max-w-4xl mx-auto text-center space-y-8 animate-fade-in">
+
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white/90 text-sm font-medium tracking-wide mb-2 animate-fade-in delay-100">
+            <span className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>
+            Original Kenyan Sanctuaries
           </div>
-          
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 sm:mb-6 leading-tight drop-shadow-lg">
-            Find Your Perfect <span className="text-secondary">Chaka Stay</span>
+
+          <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-serif font-medium text-white leading-[1.1] tracking-tight drop-shadow-2xl text-shadow">
+            Unwind in <br />
+            <span className="italic text-secondary font-light">nature's</span> embrace
           </h1>
-          
-          <p className="text-base sm:text-lg md:text-xl text-white/90 mb-6 sm:mb-8 max-w-2xl drop-shadow-md">
-            Experience authentic Kenyan hospitality with comfortable, locally-hosted accommodations near Chaka Ranch and Railway Station.
+
+          <p className="text-lg sm:text-xl md:text-2xl text-white/80 max-w-2xl mx-auto font-light leading-relaxed drop-shadow-lg drop-shadow-black/50 px-4">
+            Discover handpicked stays in Chaka that blend modern luxury with the raw beauty of the wild.
           </p>
 
-          {/* Integrated Search Form */}
-          <div className="mb-6 sm:mb-8 w-full">
-            <SearchForm />
+          <div className="pt-8 w-full max-w-2xl mx-auto transform translate-y-0 transition-all hover:-translate-y-1 duration-500">
+            <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-2 rounded-[2rem] shadow-2xl ring-1 ring-white/10">
+              <SearchForm />
+            </div>
           </div>
-          
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-            <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-white gap-2 px-4 sm:px-8 py-4 sm:py-6 text-base sm:text-lg">
-              <Link to="/properties">
-                <Search className="w-4 h-4 sm:w-5 sm:h-5" />
-                Browse Properties
-              </Link>
-            </Button>
-            <Button asChild size="lg" variant="outline" className="bg-accent/80 border-white text-white hover:bg-accent gap-2 backdrop-blur-sm px-4 sm:px-8 py-4 sm:py-6 text-base sm:text-lg">
-              <Link to="/list-property">
-                <Home className="w-4 h-4 sm:w-5 sm:h-5" />
-                List Your Property
-              </Link>
-            </Button>
+
+          <div className="pt-6 flex items-center justify-center gap-2 text-white/60 text-sm font-light tracking-widest uppercase">
+            <span>Cabin</span>
+            <span className="w-1 h-1 bg-white/40 rounded-full"></span>
+            <span>Cottage</span>
+            <span className="w-1 h-1 bg-white/40 rounded-full"></span>
+            <span>Villa</span>
           </div>
         </div>
       </div>
-      
-      {/* Decorative Elements */}
-      <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-neutral/40 to-transparent" />
+
+      {/* Scroll indicator */}
+      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 hidden md:flex flex-col items-center gap-2 opacity-70 hover:opacity-100 transition-opacity">
+        <span className="text-[10px] uppercase tracking-[0.2em] text-white/80">Scroll</span>
+        <div className="w-[1px] h-12 bg-gradient-to-b from-white to-transparent"></div>
+      </div>
     </div>
   );
 };

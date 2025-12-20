@@ -7,15 +7,8 @@ import { componentTagger } from "lovable-tagger";
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
-    port: 5173,
+    port: 3000,
     strictPort: true,
-    proxy: {
-      '/api': {
-        target: 'http://localhost/chaka-stays-haven-bookings-main',
-        changeOrigin: true,
-        secure: false,
-      }
-    }
   },
   plugins: [
     react(),
