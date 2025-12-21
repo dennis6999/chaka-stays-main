@@ -118,12 +118,12 @@ const PropertyDetail = () => {
     }
   };
 
-  const [api, setApi] = React.useState<any>();
+  const [carouselApi, setCarouselApi] = React.useState<any>();
 
   React.useEffect(() => {
-    if (!api) return;
-    api.scrollTo(activeImage);
-  }, [activeImage, api]);
+    if (!carouselApi) return;
+    carouselApi.scrollTo(activeImage);
+  }, [activeImage, carouselApi]);
 
   React.useEffect(() => {
     const loadProperty = async () => {
@@ -408,6 +408,7 @@ const PropertyDetail = () => {
                               className="w-full h-full flex items-center"
                               setApi={(api) => {
                                 if (!api) return;
+                                setCarouselApi(api);
                                 api.scrollTo(activeImage, true);
                                 api.on("select", () => {
                                   setActiveImage(api.selectedScrollSnap());
