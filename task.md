@@ -79,3 +79,4 @@
 ## Post-Deployment
 - [x] Integrate Vercel Analytics <!-- id: 42 -->
 - [x] Fix Vercel 404 on refresh (SPA routing) <!-- id: 47 -->
+- [x] Fix mobile booking login prompt <!-- id: 48 -->

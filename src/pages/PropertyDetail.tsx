@@ -367,7 +367,9 @@ const PropertyDetail = () => {
                 </div>
                 <div className="text-xs text-muted-foreground underline">{checkIn && checkOut ? `${Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))} nights` : 'Select dates'}</div>
               </div>
-              <Button onClick={() => window.scrollTo({ top: 1000, behavior: 'smooth' })} className="bg-primary px-8">Reserve</Button>
+              <Button onClick={handleBookNow} disabled={isBooking} className="bg-primary px-8">
+                {isBooking ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Reserve'}
+              </Button>
             </div>
           </div>
         </div>
