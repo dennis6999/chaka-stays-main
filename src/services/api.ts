@@ -122,12 +122,14 @@ export const api = {
     },
 
     async deleteProperty(id: string) {
-        const { error } = await supabase
+        const { error, count } = await supabase
             .from('properties')
-            .delete()
+            .delete({ count: 'exact' })
             .eq('id', id);
 
         if (error) throw error;
+        // If no rows deleted, it means either ID doesn't exist OR RLS hid it (permission denied)
+        if (count === 0) throw new Error("Could not delete property. You may not be the owner.");
     },
 
     // --- Bookings ---
