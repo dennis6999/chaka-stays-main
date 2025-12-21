@@ -32,6 +32,9 @@ const SearchForm = () => {
   );
   const [guests, setGuests] = React.useState(searchParams.get('guests') || '2');
 
+  const [checkInOpen, setCheckInOpen] = React.useState(false);
+  const [checkOutOpen, setCheckOutOpen] = React.useState(false);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const params = new URLSearchParams();
@@ -64,7 +67,7 @@ const SearchForm = () => {
 
           <div className="space-y-2">
             <Label className="text-sm font-medium">Check In</Label>
-            <Popover>
+            <Popover open={checkInOpen} onOpenChange={setCheckInOpen}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
@@ -75,14 +78,22 @@ const SearchForm = () => {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="single" selected={checkIn} onSelect={setCheckIn} initialFocus />
+                <Calendar
+                  mode="single"
+                  selected={checkIn}
+                  onSelect={(date) => {
+                    setCheckIn(date);
+                    setCheckInOpen(false);
+                  }}
+                  initialFocus
+                />
               </PopoverContent>
             </Popover>
           </div>
 
           <div className="space-y-2">
             <Label className="text-sm font-medium">Check Out</Label>
-            <Popover>
+            <Popover open={checkOutOpen} onOpenChange={setCheckOutOpen}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
@@ -93,7 +104,15 @@ const SearchForm = () => {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="single" selected={checkOut} onSelect={setCheckOut} initialFocus />
+                <Calendar
+                  mode="single"
+                  selected={checkOut}
+                  onSelect={(date) => {
+                    setCheckOut(date);
+                    setCheckOutOpen(false);
+                  }}
+                  initialFocus
+                />
               </PopoverContent>
             </Popover>
           </div>
