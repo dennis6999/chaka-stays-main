@@ -62,7 +62,7 @@ const PropertyCard = ({
         </div>
 
         {/* Content - Minimalist */}
-        <div className="pt-4 px-1 flex flex-col flex-grow">
+        <div className="pt-4 px-4 flex flex-col flex-grow">
           <div className="flex justify-between items-start mb-1">
             <h3 className="text-lg font-serif font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1 flex-1 mr-2">
               {name}
