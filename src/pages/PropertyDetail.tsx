@@ -25,7 +25,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { CalendarIcon, Check, Home, MapPin, Star, Users, Utensils, Wifi, Plus, Minus, Coffee, ShoppingBag, Heart, Share2, MessageSquare, Map, Loader2, BedDouble, Bath } from 'lucide-react';
+import { CalendarIcon, Check, Home, MapPin, Star, Users, Utensils, Wifi, Plus, Minus, Coffee, ShoppingBag, Heart, Share2, MessageSquare, Map, Loader2, BedDouble, Bath, ArrowLeft, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -72,6 +72,7 @@ const PropertyDetail = () => {
   const [checkOut, setCheckOut] = React.useState<Date | undefined>(undefined);
   const [guests, setGuests] = React.useState(2);
   const [activeImage, setActiveImage] = React.useState(0);
+  const [galleryView, setGalleryView] = React.useState<'grid' | 'carousel'>('grid');
   const [isLiked, setIsLiked] = React.useState(false);
   const [isBooking, setIsBooking] = React.useState(false);
   const [showLoginDialog, setShowLoginDialog] = React.useState(false);
@@ -298,24 +299,162 @@ const PropertyDetail = () => {
                     alt="Details"
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
                   />
-                  <Dialog>
+                  <Dialog onOpenChange={(open) => {
+                    if (!open) setGalleryView('grid');
+                  }}>
                     <DialogTrigger asChild>
                       <Button variant="secondary" className="absolute bottom-4 right-4 text-xs bg-white text-black hover:bg-neutral">
                         View all photos
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-4 md:p-10">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                        {property.images.map((image, index) => (
-                          <div key={index} className={`relative rounded-lg overflow-hidden border border-border ${index % 3 === 0 ? 'md:col-span-2 aspect-video' : 'aspect-square'}`}>
-                            <img
-                              src={image}
-                              alt={`Photo ${index + 1}`}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        ))}
+                    <DialogContent className="max-w-[100vw] h-[100vh] p-0 border-0 rounded-none bg-background flex flex-col [&>button]:hidden">
+                      {/* Custom Header */}
+                      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+                        {galleryView === 'carousel' ? (
+                          <Button variant="ghost" onClick={() => setGalleryView('grid')} className="gap-2 pl-0 hover:bg-transparent">
+                            <ArrowLeft className="h-5 w-5" /> Gallery
+                          </Button>
+                        ) : (
+                          <h2 className="text-lg font-semibold">Photo Gallery</h2>
+                        )}
+
+                        <div className="flex items-center gap-4">
+                          {galleryView === 'carousel' && (
+                            <Button className="hidden md:flex" onClick={handleBookNow}>Reserve now</Button>
+                          )}
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="rounded-full hover:bg-neutral/10">
+                              <X className="h-5 w-5" />
+                            </Button>
+                          </DialogTrigger>
+                        </div>
                       </div>
+
+                      {galleryView === 'grid' ? (
+                        <div className="overflow-y-auto p-4 md:p-8">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 max-w-7xl mx-auto">
+                            {property.images.map((image, index) => (
+                              <div
+                                key={index}
+                                className={`relative cursor-pointer group overflow-hidden rounded-lg aspect-[4/3]`}
+                                onClick={() => {
+                                  setActiveImage(index);
+                                  setGalleryView('carousel');
+                                }}
+                              >
+                                <img
+                                  src={image}
+                                  alt={`Photo ${index + 1}`}
+                                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                />
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-1 overflow-hidden">
+                          {/* Main Carousel Area */}
+                          <div className="flex-1 flex flex-col bg-black/95 relative">
+                            <div className="flex-1 flex items-center justify-center relative p-4">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute left-4 text-white hover:bg-white/20 rounded-full h-12 w-12 z-10"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveImage(prev => prev === 0 ? property.images.length - 1 : prev - 1);
+                                }}
+                              >
+                                <ChevronLeft className="h-8 w-8" />
+                              </Button>
+
+                              <img
+                                src={property.images[activeImage]}
+                                alt={`View ${activeImage + 1}`}
+                                className="max-h-full max-w-full object-contain"
+                              />
+
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-4 text-white hover:bg-white/20 rounded-full h-12 w-12 z-10"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveImage(prev => prev === property.images.length - 1 ? 0 : prev + 1);
+                                }}
+                              >
+                                <ChevronRight className="h-8 w-8" />
+                              </Button>
+                            </div>
+
+                            {/* Thumbnails Strip */}
+                            <div className="h-20 bg-black/80 flex items-center justify-center gap-2 overflow-x-auto px-4 py-2 no-scrollbar">
+                              {property.images.map((img, idx) => (
+                                <button
+                                  key={idx}
+                                  onClick={() => setActiveImage(idx)}
+                                  className={`relative h-14 w-20 flex-shrink-0 rounded-md overflow-hidden transition-all ${activeImage === idx ? 'ring-2 ring-white opacity-100' : 'opacity-50 hover:opacity-80'}`}
+                                >
+                                  <img src={img} alt="thumbnail" className="w-full h-full object-cover" />
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Right Sidebar - Info */}
+                          <div className="w-80 border-l border-border bg-background hidden lg:flex flex-col p-6 overflow-y-auto">
+                            <div className="space-y-6">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <h3 className="font-serif font-bold text-xl">{property.title}</h3>
+                                  <p className="text-sm text-muted-foreground mt-1 flex items-center">
+                                    <MapPin className="h-3 w-3 mr-1" /> {property.location}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-between p-4 bg-primary/5 rounded-lg border border-primary/10">
+                                <div className="flex items-center gap-3">
+                                  <div className="h-10 w-10 bg-primary text-primary-foreground rounded-lg flex items-center justify-center font-bold text-lg">
+                                    {property.rating}
+                                  </div>
+                                  <div>
+                                    <div className="font-semibold text-sm">Very Good</div>
+                                    <div className="text-xs text-muted-foreground">{property.review_count} reviews</div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Mock Rating Categories (Since backend doesn't have them yet) */}
+                              <div className="space-y-3 pt-2">
+                                {['Cleanliness', 'Comfort', 'Facilities', 'Staff', 'Value for money'].map((cat, i) => (
+                                  <div key={cat} className="space-y-1">
+                                    <div className="flex justify-between text-xs font-medium">
+                                      <span>{cat}</span>
+                                      <span>{(property.rating - (i * 0.1)).toFixed(1)}</span>
+                                    </div>
+                                    <div className="h-1.5 w-full bg-neutral/10 rounded-full overflow-hidden">
+                                      <div
+                                        className="h-full bg-primary rounded-full"
+                                        style={{ width: `${((property.rating - (i * 0.1)) / 5) * 100}%` }}
+                                      />
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+
+                              <div className="pt-6 border-t border-border mt-auto">
+                                <div className="flex justify-between items-baseline mb-4">
+                                  <span className="text-xs text-muted-foreground">Price starts at</span>
+                                  <span className="text-xl font-bold text-primary">KES {property.price_per_night.toLocaleString()}</span>
+                                </div>
+                                <Button onClick={handleBookNow} className="w-full h-12 text-lg">Reserve now</Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </DialogContent>
                   </Dialog>
                 </div>
