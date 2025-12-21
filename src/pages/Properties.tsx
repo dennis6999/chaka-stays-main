@@ -333,48 +333,62 @@ const Properties = () => {
           {/* Main Content */}
           <div className="flex-1">
             {/* Mobile Filter Bar & Sort */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-6 items-start sm:items-center justify-between sticky top-20 z-30 lg:static bg-background/95 backdrop-blur py-2 lg:py-0 lg:bg-transparent">
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                {/* Mobile Filter Sheet */}
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <Button variant="outline" className="lg:hidden flex-1 sm:flex-none">
-                      <SlidersHorizontal className="w-4 h-4 mr-2" /> Filters
-                      {(selectedTypes.length > 0 || selectedAmenities.length > 0) && (
-                        <Badge variant="secondary" className="ml-2 h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px]">
-                          {selectedTypes.length + selectedAmenities.length}
-                        </Badge>
-                      )}
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="left" className="w-full sm:w-[400px] overflow-y-auto">
-                    <SheetHeader>
-                      <SheetTitle>Filters</SheetTitle>
-                      <SheetDescription>Find the perfect place according to your needs.</SheetDescription>
-                    </SheetHeader>
-                    <div className="mt-8">
-                      <FilterSidebar isMobile />
+            <div className="lg:hidden sticky top-20 z-30 -mx-6 px-6 py-3 bg-background/80 backdrop-blur-xl border-b border-border/40 shadow-sm mb-6 flex items-center justify-between gap-3">
+              {/* Mobile Filter Sheet Trigger */}
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" className="flex-1 rounded-full border-primary/20 bg-white/50 hover:bg-white hover:border-primary shadow-sm h-10">
+                    <SlidersHorizontal className="w-4 h-4 mr-2 text-primary" />
+                    <span className="font-medium text-foreground">Filters</span>
+                    {(selectedTypes.length > 0 || selectedAmenities.length > 0 || selectedLocations.length > 0 || minGuests > 0) && (
+                      <Badge variant="secondary" className="ml-2 h-5 w-5 p-0 flex items-center justify-center rounded-full bg-primary text-white text-[10px] border-0">
+                        {selectedTypes.length + selectedAmenities.length + selectedLocations.length + (minGuests > 0 ? 1 : 0)}
+                      </Badge>
+                    )}
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-full sm:w-[400px] overflow-y-auto">
+                  <SheetHeader>
+                    <SheetTitle className="font-serif text-2xl">Filters</SheetTitle>
+                    <SheetDescription>Refine your search to find the perfect stay.</SheetDescription>
+                  </SheetHeader>
+                  <div className="mt-8">
+                    <FilterSidebar isMobile />
+                  </div>
+                  <SheetFooter className="absolute bottom-0 left-0 right-0 p-4 border-t bg-background">
+                    <div className="flex gap-2 w-full">
+                      <Button variant="outline" className="flex-1" onClick={clearAllFilters}>Clear</Button>
+                      <SheetClose asChild>
+                        <Button className="flex-1">Show properties</Button>
+                      </SheetClose>
                     </div>
-                    <SheetFooter className="absolute bottom-0 left-0 right-0 p-4 border-t bg-background">
-                      <div className="flex gap-2 w-full">
-                        <Button variant="outline" className="flex-1" onClick={clearAllFilters}>Clear</Button>
-                        <SheetClose asChild>
-                          <Button className="flex-1">Show properties</Button>
-                        </SheetClose>
-                      </div>
-                    </SheetFooter>
-                  </SheetContent>
-                </Sheet>
+                  </SheetFooter>
+                </SheetContent>
+              </Sheet>
 
-                <p className="hidden sm:block text-sm text-muted-foreground">
+              {/* Sort Dropdown */}
+              <Select value={sortOption} onValueChange={setSortOption}>
+                <SelectTrigger className="flex-1 h-10 rounded-full border-primary/20 bg-white/50 hover:bg-white focus:ring-0">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent align="end">
+                  <SelectItem value="recommended">Recommended</SelectItem>
+                  <SelectItem value="price-low">Price: Low to High</SelectItem>
+                  <SelectItem value="price-high">Price: High to Low</SelectItem>
+                  <SelectItem value="rating">Top Rated</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Desktop Sort Bar (Hidden on Mobile) */}
+            <div className="hidden lg:flex flex-col sm:flex-row gap-4 mb-6 items-start sm:items-center justify-between">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <p className="text-sm text-muted-foreground">
                   {filteredProperties.length} {filteredProperties.length === 1 ? 'result' : 'results'}
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 w-full sm:w-auto justify-between">
-                <p className="sm:hidden text-sm text-muted-foreground">
-                  {filteredProperties.length} results
-                </p>
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
                 <Select value={sortOption} onValueChange={setSortOption}>
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Sort by" />
