@@ -365,27 +365,43 @@ const PropertyDetail = () => {
                     <div className="p-3 border rounded-tl-lg rounded-bl-none border-neutral">
                       <Label className="text-xs uppercase font-bold text-muted-foreground">Check-in</Label>
                       <CalendarIcon className="h-4 w-4 text-muted-foreground mb-1 block md:hidden" />
-                      <Popover>
+                      <Popover open={checkInOpen} onOpenChange={setCheckInOpen}>
                         <PopoverTrigger asChild>
                           <button className="w-full text-left font-normal text-sm pt-1 focus:outline-none">
                             {checkIn ? format(checkIn, "dd/MM/yyyy") : "Add date"}
                           </button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar mode="single" selected={checkIn} onSelect={setCheckIn} initialFocus />
+                          <Calendar
+                            mode="single"
+                            selected={checkIn}
+                            onSelect={(date) => {
+                              setCheckIn(date);
+                              setCheckInOpen(false);
+                            }}
+                            initialFocus
+                          />
                         </PopoverContent>
                       </Popover>
                     </div>
                     <div className="p-3 border rounded-tr-lg rounded-br-none border-l-0 border-neutral">
                       <Label className="text-xs uppercase font-bold text-muted-foreground">Check-out</Label>
-                      <Popover>
+                      <Popover open={checkOutOpen} onOpenChange={setCheckOutOpen}>
                         <PopoverTrigger asChild>
                           <button className="w-full text-left font-normal text-sm pt-1 focus:outline-none">
                             {checkOut ? format(checkOut, "dd/MM/yyyy") : "Add date"}
                           </button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="end">
-                          <Calendar mode="single" selected={checkOut} onSelect={setCheckOut} initialFocus />
+                          <Calendar
+                            mode="single"
+                            selected={checkOut}
+                            onSelect={(date) => {
+                              setCheckOut(date);
+                              setCheckOutOpen(false);
+                            }}
+                            initialFocus
+                          />
                         </PopoverContent>
                       </Popover>
                     </div>
