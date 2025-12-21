@@ -38,7 +38,11 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ propertyId, userId, onReviewSub
             onReviewSubmitted();
         } catch (error: any) {
             console.error('Error submitting review:', error);
-            toast.error(error.message || 'Failed to submit review');
+            if (error.code === '23505' || error.message?.includes('duplicate key')) {
+                toast.error('You have already reviewed this property');
+            } else {
+                toast.error(error.message || 'Failed to submit review');
+            }
         } finally {
             setIsSubmitting(false);
         }
