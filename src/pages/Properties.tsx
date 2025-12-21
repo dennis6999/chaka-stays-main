@@ -114,15 +114,19 @@ const Properties = () => {
   // --- Filtering Logic (Realtime) ---
   const filteredProperties = useMemo(() => {
     return properties.filter(p => {
+      // Safe type coercion
+      const price = Number(p.price_per_night) || 0;
+      const guests = Number(p.max_guests) || 0;
+
       // 1. Price
-      if (p.price_per_night < priceRange[0] || p.price_per_night > priceRange[1]) return false;
+      if (price < priceRange[0] || price > priceRange[1]) return false;
 
       // 2. Locations (Multi-select OR user search text)
       if (selectedLocations.length > 0) {
         // Check if any selected location matches the property location (substring match for flexibility)
         // If user searched "Chaka", and property is "Chaka Town", it should match.
         const matchesLocation = selectedLocations.some(loc =>
-          p.location.toLowerCase().includes(loc.toLowerCase())
+          p.location && p.location.toLowerCase().includes(loc.toLowerCase())
         );
         if (!matchesLocation) return false;
       }
@@ -141,13 +145,15 @@ const Properties = () => {
       }
 
       // 5. Guests
-      if (p.max_guests < minGuests) return false;
+      if (guests < minGuests) return false;
 
       return true;
     }).sort((a, b) => {
+      const priceA = Number(a.price_per_night) || 0;
+      const priceB = Number(b.price_per_night) || 0;
       switch (sortOption) {
-        case 'price-low': return a.price_per_night - b.price_per_night;
-        case 'price-high': return b.price_per_night - a.price_per_night;
+        case 'price-low': return priceA - priceB;
+        case 'price-high': return priceB - priceA;
         case 'rating': return b.rating - a.rating;
         default: return 0;
       }
@@ -441,12 +447,25 @@ const Properties = () => {
                 <div className="h-16 w-16 bg-neutral/10 rounded-full flex items-center justify-center mb-4 text-muted-foreground">
                   <Filter className="h-8 w-8" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">No matches found</h3>
-                <p className="text-muted-foreground mb-6 max-w-md">
-                  We couldn't find any properties that match your current filters.
-                  Try adjusting the price range or removing some filters.
-                </p>
-                <Button onClick={clearAllFilters}>Clear all filters</Button>
+                {properties.length === 0 ? (
+                  <>
+                    <h3 className="text-xl font-bold mb-2">No properties here... yet!</h3>
+                    <p className="text-muted-foreground mb-6 max-w-md">
+                      It looks like there are no properties in the system.
+                      Go to the Dashboard to add one!
+                    </p>
+                    <Button onClick={() => window.location.href = '/dashboard'}>Go to Dashboard</Button>
+                  </>
+                ) : (
+                  <>
+                    <h3 className="text-xl font-bold mb-2">No matches found</h3>
+                    <p className="text-muted-foreground mb-6 max-w-md">
+                      We couldn't find any properties that match your filters.
+                      Try adjusting the price range or removing some filters.
+                    </p>
+                    <Button onClick={clearAllFilters}>Clear all filters</Button>
+                  </>
+                )}
               </div>
             )}
           </div>
