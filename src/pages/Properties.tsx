@@ -213,8 +213,17 @@ const Properties = () => {
       <Navbar />
       <main className="flex-grow pb-24">
         {/* Header Section */}
-        <div className="bg-dark py-12 md:py-20 relative overflow-hidden">
-          <div className="absolute inset-0 bg-black/40 z-0"></div> {/* Darker Overlay for text pop */}
+        {/* Header Section */}
+        <div className="relative py-16 md:py-24 overflow-hidden min-h-[400px] flex flex-col justify-center">
+          {/* Background Image */}
+          <div className="absolute inset-0 z-0">
+            <img
+              src="https://images.unsplash.com/photo-1449156493391-d2cfa28e468b?q=80&w=2072&auto=format&fit=crop"
+              alt="Background"
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-black/40" />
+          </div>
           <div className="chaka-container relative z-10 text-center md:text-left">
             <h1 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold text-white mb-6 leading-tight tracking-tight">
               Find Your Perfect <br className="hidden md:block" /> Stay in Chaka Town
