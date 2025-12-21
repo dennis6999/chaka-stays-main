@@ -453,23 +453,29 @@ const PropertyDetail = () => {
                   </div>
                 </div>
               </SheetTrigger>
-              <SheetContent side="bottom" className="h-[80vh] rounded-t-xl">
-                <SheetHeader>
+              <SheetContent side="bottom" className="h-[90vh] flex flex-col rounded-t-xl sm:max-w-none">
+                <SheetHeader className="mb-2">
                   <SheetTitle>Select Dates</SheetTitle>
                   <SheetDescription>
                     Add your travel dates for exact pricing
                   </SheetDescription>
                 </SheetHeader>
-                <div className="flex flex-col gap-4 mt-6 h-full overflow-y-auto pb-10">
-                  <div className="space-y-2">
-                    <Label>Check-in</Label>
-                    <Calendar mode="single" selected={checkIn} onSelect={setCheckIn} className="rounded-md border mx-auto" />
+                <div className="flex-1 overflow-y-auto pb-12 px-1">
+                  <div className="flex flex-col gap-6">
+                    <div className="space-y-3">
+                      <Label className="text-base font-semibold">Check-in Date</Label>
+                      <div className="border rounded-lg p-2 bg-card flex justify-center">
+                        <Calendar mode="single" selected={checkIn} onSelect={setCheckIn} className="rounded-md" initialFocus />
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <Label className="text-base font-semibold">Check-out Date</Label>
+                      <div className="border rounded-lg p-2 bg-card flex justify-center">
+                        <Calendar mode="single" selected={checkOut} onSelect={setCheckOut} className="rounded-md" />
+                      </div>
+                    </div>
+                    <Button onClick={() => document.body.click()} className="w-full mt-2 h-12 text-base shadow-lg bg-primary text-primary-foreground mb-8">Confirm Dates</Button>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Check-out</Label>
-                    <Calendar mode="single" selected={checkOut} onSelect={setCheckOut} className="rounded-md border mx-auto" />
-                  </div>
-                  <Button onClick={() => document.body.click()} className="w-full mt-4">Confirm Dates</Button>
                 </div>
               </SheetContent>
             </Sheet>
