@@ -161,7 +161,7 @@ const Dashboard: React.FC = () => {
 
       <main className="flex-grow pt-24 pb-16">
         <div className="chaka-container">
-          <div className="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-6">
             <div>
               <h1 className="text-3xl md:text-5xl font-serif font-bold text-foreground">Dashboard</h1>
               <p className="text-muted-foreground mt-2">Welcome back, {user.name}!</p>
