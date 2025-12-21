@@ -53,8 +53,6 @@ const Dashboard: React.FC = () => {
     location: '',
     price: '',
     description: '',
-    price: '',
-    description: '',
     images: [] as string[],
     max_guests: 2,
     bedrooms: 1,
@@ -636,33 +634,51 @@ const Dashboard: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Property Image</label>
-                        <div className="flex gap-2">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={async (e) => {
-                              const file = e.target.files?.[0];
-                              if (!file) return;
-                              try {
-                                toast.info('Uploading image...');
-                                const url = await api.uploadImage(file);
-                                setNewProperty((prev) => ({ ...prev, image_url: url }));
-                                toast.success('Image uploaded successfully');
-                              } catch (error: any) {
-                                console.error('Upload failed:', error);
-                                toast.error(`Upload failed: ${error.message || 'Unknown error'}`);
-                              }
-                            }}
-                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-muted-foreground file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                          />
+                      <div className="space-y-4">
+                        <label className="text-sm font-medium">Property Images</label>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                          {newProperty.images.map((img, index) => (
+                            <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-border group">
+                              <img src={img} alt={`Property ${index + 1}`} className="w-full h-full object-cover" />
+                              <button
+                                type="button"
+                                onClick={() => setNewProperty({ ...newProperty, images: newProperty.images.filter((_, i) => i !== index) })}
+                                className="absolute top-2 right-2 p-1 bg-destructive/90 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <Trash className="h-4 w-4" />
+                              </button>
+                            </div>
+                          ))}
+                          <label className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg aspect-square cursor-pointer hover:bg-neutral/5 transition-colors">
+                            <Plus className="h-8 w-8 text-muted-foreground mb-2" />
+                            <span className="text-xs text-muted-foreground">Add Image</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              className="hidden"
+                              onChange={async (e) => {
+                                const files = e.target.files;
+                                if (!files || files.length === 0) return;
+
+                                try {
+                                  toast.info('Uploading images...');
+                                  const uploadPromises = Array.from(files).map(file => api.uploadImage(file));
+                                  const uploadedUrls = await Promise.all(uploadPromises);
+
+                                  setNewProperty({
+                                    ...newProperty,
+                                    images: [...newProperty.images, ...uploadedUrls]
+                                  });
+                                  toast.success('Images uploaded successfully');
+                                } catch (error) {
+                                  console.error('Error uploading images:', error);
+                                  toast.error('Failed to upload some images');
+                                }
+                              }}
+                            />
+                          </label>
                         </div>
-                        {newProperty.image_url && (
-                          <div className="text-xs text-green-600 truncate mt-1">
-                            Image uploaded: ...{newProperty.image_url.slice(-20)}
-                          </div>
-                        )}
                       </div>
 
                       <div className="space-y-2">
