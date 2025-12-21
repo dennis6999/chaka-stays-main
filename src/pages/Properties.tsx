@@ -300,14 +300,26 @@ const Properties = () => {
       <Navbar />
 
       {/* Hero / Header */}
-      <div className="bg-neutral-900 text-white py-12 md:py-20 relative overflow-hidden">
-        <div className="absolute inset-0 z-0 opacity-40">
-          <img src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?q=80&w=2070" className="w-full h-full object-cover" />
+      {/* Hero / Header properties page */}
+      <div className="relative h-[45vh] lg:h-[50vh] min-h-[400px] flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <img
+            src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?q=80&w=2070"
+            className="w-full h-full object-cover scale-105 animate-in fade-in zoom-in-105 duration-1000"
+            alt="Hero Background"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-black/40 to-black/30" />
         </div>
-        <div className="chaka-container relative z-10">
-          <h1 className="text-3xl md:text-5xl font-serif font-bold mb-4">Explore Our Stays</h1>
-          <p className="text-lg text-neutral-300 max-w-2xl">
-            Discover handpicked homes, cabins, and apartments for your next adventure in Chaka Town.
+
+        <div className="chaka-container relative z-10 text-center px-4">
+          <Badge variant="outline" className="mb-4 bg-white/10 backdrop-blur-md text-white border-white/20 px-4 py-1.5 uppercase tracking-widest text-[10px] font-semibold animate-in slide-in-from-bottom-4 duration-700">
+            Exclusive Rentals
+          </Badge>
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif font-bold mb-6 text-white tracking-tight animate-in slide-in-from-bottom-8 duration-700 delay-100 drop-shadow-lg">
+            Find Your <span className="text-primary-foreground/90 italic">Sanctuary</span>
+          </h1>
+          <p className="text-lg md:text-xl text-white/90 max-w-xl mx-auto leading-relaxed font-light animate-in slide-in-from-bottom-8 duration-700 delay-200 text-shadow-sm">
+            Discover handpicked homes and cabins for your next adventure in Chaka.
           </p>
         </div>
       </div>
