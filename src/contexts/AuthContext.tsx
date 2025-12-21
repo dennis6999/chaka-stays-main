@@ -48,7 +48,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session?.user) {
-        fetchProfile(session.user);
+        // Only set loading to true if we don't already have the user data for this ID
+        // This prevents flickering on token refreshes
+        if (user?.id !== session.user.id) {
+          setLoading(true);
+          fetchProfile(session.user);
+        }
       } else {
         setUser(null);
         setLoading(false);

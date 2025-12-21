@@ -64,5 +64,8 @@
 
 ## Deployment Debugging
 - [x] Investigate infinite loading on Home and Properties pages (Production) <!-- id: 41 -->
+
+## Authentication Fixes
+- [x] Investigate `Dashboard.tsx` for unwanted redirects <!-- id: 43 -->
 ## Post-Deployment
 - [x] Integrate Vercel Analytics <!-- id: 42 -->
