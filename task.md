@@ -67,5 +67,14 @@
 
 ## Authentication Fixes
 - [x] Investigate `Dashboard.tsx` for unwanted redirects <!-- id: 43 -->
+## Database & Permissions
+- [ ] Fix Property Deletion failure (RLS/Permissions) <!-- id: 44 -->
+
+## Email & Notifications
+- [ ] Troubleshoot missing Supabase confirmation emails <!-- id: 45 -->
+
+## UX Improvements
+- [x] Add login prompt for unauthenticated booking attempts <!-- id: 46 -->
+
 ## Post-Deployment
 - [x] Integrate Vercel Analytics <!-- id: 42 -->

@@ -28,15 +28,22 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { format } from 'date-fns';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
-
 import { api, Property } from '@/services/api';
-// ... other imports
-
 const PropertyDetail = () => {
   const { id } = useParams();
   const { user } = useAuth();
@@ -49,6 +56,7 @@ const PropertyDetail = () => {
   const [activeImage, setActiveImage] = React.useState(0);
   const [isLiked, setIsLiked] = React.useState(false);
   const [isBooking, setIsBooking] = React.useState(false);
+  const [showLoginDialog, setShowLoginDialog] = React.useState(false);
 
   React.useEffect(() => {
     const fetchProperty = async () => {
@@ -70,8 +78,7 @@ const PropertyDetail = () => {
 
   const handleBookNow = async () => {
     if (!user) {
-      toast.error('Please sign in to book a property');
-      navigate('/auth');
+      setShowLoginDialog(true);
       return;
     }
 
@@ -366,6 +373,24 @@ const PropertyDetail = () => {
         </div>
       </main>
       <Footer />
+      <AlertDialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Account Required</AlertDialogTitle>
+            <AlertDialogDescription>
+              To ensure a secure booking experience, you need to be signed in to reserve this property.
+              It only takes a moment to create an account!
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel className="mt-0">Cancel</AlertDialogCancel>
+            <Button variant="outline" onClick={() => navigate('/auth')}>
+              Sign In
+            </Button>
+            <AlertDialogAction onClick={() => navigate('/signup')}>Create Account</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
