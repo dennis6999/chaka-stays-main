@@ -319,9 +319,6 @@ const PropertyDetail = () => {
                         )}
 
                         <div className="flex items-center gap-4">
-                          {galleryView === 'carousel' && (
-                            <Button className="hidden md:flex" onClick={handleBookNow}>Reserve now</Button>
-                          )}
                           <DialogTrigger asChild>
                             <Button variant="ghost" size="icon" className="rounded-full hover:bg-neutral/10">
                               <X className="h-5 w-5" />
@@ -433,7 +430,22 @@ const PropertyDetail = () => {
                                   <span className="text-xs text-muted-foreground">Price starts at</span>
                                   <span className="text-xl font-bold text-primary">KES {property.price_per_night.toLocaleString()}</span>
                                 </div>
-                                <Button onClick={handleBookNow} className="w-full h-12 text-lg">Reserve now</Button>
+                                <DialogTrigger asChild>
+                                  <Button
+                                    onClick={() => {
+                                      // Scroll to booking section if dates aren't selected
+                                      if (!checkIn || !checkOut) {
+                                        document.querySelector('.lg\\:w-1\\/3')?.scrollIntoView({ behavior: 'smooth' });
+                                        // Or specifically focus the date picker if possible, but scroll is good enough for now
+                                      } else {
+                                        handleBookNow();
+                                      }
+                                    }}
+                                    className="w-full h-12 text-lg"
+                                  >
+                                    Reserve now
+                                  </Button>
+                                </DialogTrigger>
                               </div>
                             </div>
                           </div>
