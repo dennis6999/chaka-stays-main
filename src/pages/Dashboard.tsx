@@ -847,12 +847,11 @@ const Dashboard: React.FC = () => {
                     )}
                   </CardContent>
                 </Card>
-              </Card>
-            </div>
-          </TabsContent>
-        </Tabs>
-    </div >
-        </main >
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </main>
       <Footer />
 
       <AlertDialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
