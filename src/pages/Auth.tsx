@@ -83,7 +83,7 @@ const Auth: React.FC = () => {
       </div>
 
       {/* Form Side */}
-      <div className="flex-1 flex items-center justify-center p-8 lg:p-12 bg-background">
+      <div className="flex-1 flex items-center justify-center p-4 md:p-8 lg:p-12 bg-background">
         <div className="w-full max-w-sm space-y-10 animate-fade-in">
           <div className="text-center space-y-2">
             <h2 className="text-3xl font-serif font-bold tracking-tight text-primary">Welcome Back</h2>

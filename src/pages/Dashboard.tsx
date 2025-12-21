@@ -193,7 +193,7 @@ const Dashboard: React.FC = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-            <TabsList className="w-full justify-start border-b border-border bg-transparent p-0 h-auto rounded-none space-x-6 overflow-x-auto">
+            <TabsList className="w-full justify-start border-b border-border bg-transparent p-0 h-auto rounded-none space-x-2 md:space-x-6 overflow-x-auto flex-nowrap -mx-4 px-4 md:mx-0 md:px-0 no-scrollbar">
               <TabsTrigger
                 value="overview"
                 className="rounded-none border-b-2 border-transparent px-4 py-3 font-serif font-medium text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent transition-all text-lg whitespace-nowrap"

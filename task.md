@@ -80,3 +80,8 @@
 - [x] Integrate Vercel Analytics <!-- id: 42 -->
 - [x] Fix Vercel 404 on refresh (SPA routing) <!-- id: 47 -->
 - [x] Fix mobile booking login prompt <!-- id: 48 -->
+
+## Mobile First Audit (Top Priority)
+- [x] Verify Dashboard Mobile View (Tabs, layout) <!-- id: 49 -->
+- [x] Verify Auth Pages on small screens <!-- id: 50 -->
+- [x] Ensure Toasts/Dialogs look good on mobile <!-- id: 51 -->

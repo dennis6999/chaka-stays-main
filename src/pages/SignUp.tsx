@@ -123,7 +123,7 @@ const SignUp: React.FC = () => {
   return (
     <div className="min-h-screen flex w-full">
       {/* Form Side */}
-      <div className="flex-1 flex items-center justify-center p-8 lg:p-12 bg-background overflow-y-auto">
+      <div className="flex-1 flex items-center justify-center p-4 md:p-8 lg:p-12 bg-background overflow-y-auto">
         <div className="w-full max-w-md space-y-8 animate-fade-in py-8">
           <div className="text-center space-y-2">
             <h2 className="text-3xl font-serif font-bold tracking-tight text-primary">Begin Your Journey</h2>
