@@ -36,6 +36,19 @@ export interface Booking {
     properties?: Property; // Join result
 }
 
+export interface Review {
+    id: string;
+    property_id: string;
+    user_id: string;
+    rating: number;
+    comment: string;
+    created_at: string;
+    user?: {
+        full_name: string;
+        avatar_url: string;
+    };
+}
+
 const timeout = (ms: number) => new Promise((_, reject) => setTimeout(() => reject(new Error('Request timed out')), ms));
 
 export const api = {
@@ -161,6 +174,33 @@ export const api = {
                 ...booking,
                 status: 'confirmed' // Auto-confirm for demo
             })
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    },
+
+    // --- Reviews ---
+
+    async getReviews(propertyId: string) {
+        const { data, error } = await supabase
+            .from('reviews')
+            .select(`
+                *,
+                user:profiles(full_name, avatar_url)
+            `)
+            .eq('property_id', propertyId)
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        return data as Review[];
+    },
+
+    async createReview(review: { property_id: string; user_id: string; rating: number; comment: string }) {
+        const { data, error } = await supabase
+            .from('reviews')
+            .insert(review)
             .select()
             .single();
 

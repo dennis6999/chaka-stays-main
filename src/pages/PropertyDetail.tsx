@@ -43,7 +43,9 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
-import { api, Property } from '@/services/api';
+import { api, Property, Review } from '@/services/api';
+import ReviewForm from '@/components/ReviewForm';
+
 const PropertyDetail = () => {
   const { id } = useParams();
   const { user } = useAuth();
@@ -57,14 +59,29 @@ const PropertyDetail = () => {
   const [isLiked, setIsLiked] = React.useState(false);
   const [isBooking, setIsBooking] = React.useState(false);
   const [showLoginDialog, setShowLoginDialog] = React.useState(false);
+  const [reviews, setReviews] = React.useState<Review[]>([]);
+
+  const fetchReviews = async () => {
+    if (!id) return;
+    try {
+      const data = await api.getReviews(id);
+      setReviews(data);
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+    }
+  };
 
   React.useEffect(() => {
     const fetchProperty = async () => {
       if (!id) return;
       try {
         setIsLoading(true);
-        const data = await api.getProperty(id);
-        setProperty(data);
+        const [propertyData, reviewsData] = await Promise.all([
+          api.getProperty(id),
+          api.getReviews(id)
+        ]);
+        setProperty(propertyData);
+        setReviews(reviewsData);
       } catch (error) {
         console.error('Error fetching property:', error);
         toast.error('Failed to load property details');
@@ -257,120 +274,173 @@ const PropertyDetail = () => {
                   ))}
                 </div>
               </div>
-
             </div>
 
-            {/* Desktop Booking Sidebar */}
-            <div className="hidden lg:block lg:w-1/3">
-              <div className="sticky top-24">
-                <div className="glass-card rounded-xl shadow-xl overflow-hidden p-6 border border-white/20">
-                  <div className="flex justify-between items-baseline mb-6">
-                    <div>
-                      <span className="text-2xl font-bold font-serif text-primary">KES {property.price_per_night}</span>
-                      <span className="text-muted-foreground"> night</span>
-                    </div>
-                    <div className="flex items-center text-sm font-medium">
-                      <Star className="h-4 w-4 bg-secondary text-white rounded-sm p-0.5 mr-1" />
-                      {property.rating} · <span className="text-muted-foreground ml-1 underline">{property.review_count} reviews</span>
-                    </div>
-                  </div>
+            {/* Reviews Section */}
+            <div className="py-8 border-t border-border">
+              <div className="flex items-center gap-2 mb-6">
+                <Star className="h-6 w-6 text-primary fill-primary" />
+                <h3 className="font-serif text-2xl font-semibold">
+                  {reviews.length > 0 ? `${property.rating} · ${reviews.length} reviews` : 'No reviews (yet)'}
+                </h3>
+              </div>
 
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="p-3 border rounded-tl-lg rounded-bl-none border-neutral">
-                        <Label className="text-xs uppercase font-bold text-muted-foreground">Check-in</Label>
-                        <CalendarIcon className="h-4 w-4 text-muted-foreground mb-1 block md:hidden" />
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <button className="w-full text-left font-normal text-sm pt-1 focus:outline-none">
-                              {checkIn ? format(checkIn, "dd/MM/yyyy") : "Add date"}
-                            </button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="single" selected={checkIn} onSelect={setCheckIn} initialFocus />
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-                      <div className="p-3 border rounded-tr-lg rounded-br-none border-l-0 border-neutral">
-                        <Label className="text-xs uppercase font-bold text-muted-foreground">Check-out</Label>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <button className="w-full text-left font-normal text-sm pt-1 focus:outline-none">
-                              {checkOut ? format(checkOut, "dd/MM/yyyy") : "Add date"}
-                            </button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="end">
-                            <Calendar mode="single" selected={checkOut} onSelect={setCheckOut} initialFocus />
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-                    </div>
-                    <div className="p-3 border rounded-b-lg border-t-0 border-neutral mt-0">
-                      <Label className="text-xs uppercase font-bold text-muted-foreground">Guests</Label>
-                      <Select value={guests.toString()} onValueChange={(value) => setGuests(parseInt(value))}>
-                        <SelectTrigger className="border-0 p-0 h-auto focus:ring-0">
-                          <SelectValue placeholder="1 guest" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {[1, 2, 3, 4, 5, 6].map((num) => (
-                            <SelectItem key={num} value={num.toString()}>
-                              {num} {num === 1 ? 'guest' : 'guests'}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <Button
-                      className="w-full h-12 text-lg bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
-                      onClick={handleBookNow}
-                      disabled={isBooking}
-                    >
-                      {isBooking ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Checking availability...
-                        </>
-                      ) : (
-                        'Reserve'
-                      )}
-                    </Button>
-
-                    <div className="text-center text-sm text-muted-foreground py-2">
-                      You won't be charged yet
-                    </div>
-
-                    <div className="flex justify-between text-muted-foreground pt-4 border-t">
-                      <span>KES {property.price_per_night} x 5 nights</span>
-                      <span>KES {property.price_per_night * 5}</span>
-                    </div>
-                    <div className="flex justify-between text-muted-foreground">
-                      <span>Cleaning fee</span>
-                      <span>KES 2,500</span>
-                    </div>
-                    <div className="flex justify-between text-foreground font-bold pt-4 border-t text-lg">
-                      <span>Total before taxes</span>
-                      <span>KES {property.price_per_night * 5 + 2500}</span>
-                    </div>
-
-                  </div>
+              {/* Review Form */}
+              {user && user.id !== property.host_id && (
+                <div className="mb-8">
+                  <ReviewForm
+                    propertyId={property.id}
+                    userId={user.id}
+                    onReviewSubmitted={fetchReviews}
+                  />
                 </div>
+              )}
+
+              {/* Reviews List */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {reviews.map((review) => (
+                  <div key={review.id} className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={review.user?.avatar_url || "https://randomuser.me/api/portraits/lego/1.jpg"}
+                        alt={review.user?.full_name}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                      <div>
+                        <div className="font-semibold">{review.user?.full_name || 'Guest'}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {new Date(review.created_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-1">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`h-4 w-4 ${i < review.rating ? 'fill-primary text-primary' : 'text-neutral'}`}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-foreground/80 leading-relaxed">
+                      {review.comment}
+                    </p>
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* Mobile Fixed Bottom Bar */}
-            <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border z-40 flex items-center justify-between safe-area-bottom shadow-[0_-5px_10px_rgba(0,0,0,0.05)]">
-              <div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-xl font-bold font-serif text-primary">KES {property.price_per_night}</span>
-                  <span className="text-sm text-muted-foreground">/ night</span>
+          </div>
+
+          {/* Desktop Booking Sidebar */}
+          <div className="hidden lg:block lg:w-1/3">
+            <div className="sticky top-24">
+              <div className="glass-card rounded-xl shadow-xl overflow-hidden p-6 border border-white/20">
+                <div className="flex justify-between items-baseline mb-6">
+                  <div>
+                    <span className="text-2xl font-bold font-serif text-primary">KES {property.price_per_night}</span>
+                    <span className="text-muted-foreground"> night</span>
+                  </div>
+                  <div className="flex items-center text-sm font-medium">
+                    <Star className="h-4 w-4 bg-secondary text-white rounded-sm p-0.5 mr-1" />
+                    {property.rating} · <span className="text-muted-foreground ml-1 underline">{property.review_count} reviews</span>
+                  </div>
                 </div>
-                <div className="text-xs text-muted-foreground underline">{checkIn && checkOut ? `${Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))} nights` : 'Select dates'}</div>
+
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="p-3 border rounded-tl-lg rounded-bl-none border-neutral">
+                      <Label className="text-xs uppercase font-bold text-muted-foreground">Check-in</Label>
+                      <CalendarIcon className="h-4 w-4 text-muted-foreground mb-1 block md:hidden" />
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button className="w-full text-left font-normal text-sm pt-1 focus:outline-none">
+                            {checkIn ? format(checkIn, "dd/MM/yyyy") : "Add date"}
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar mode="single" selected={checkIn} onSelect={setCheckIn} initialFocus />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <div className="p-3 border rounded-tr-lg rounded-br-none border-l-0 border-neutral">
+                      <Label className="text-xs uppercase font-bold text-muted-foreground">Check-out</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button className="w-full text-left font-normal text-sm pt-1 focus:outline-none">
+                            {checkOut ? format(checkOut, "dd/MM/yyyy") : "Add date"}
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="end">
+                          <Calendar mode="single" selected={checkOut} onSelect={setCheckOut} initialFocus />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  </div>
+                  <div className="p-3 border rounded-b-lg border-t-0 border-neutral mt-0">
+                    <Label className="text-xs uppercase font-bold text-muted-foreground">Guests</Label>
+                    <Select value={guests.toString()} onValueChange={(value) => setGuests(parseInt(value))}>
+                      <SelectTrigger className="border-0 p-0 h-auto focus:ring-0">
+                        <SelectValue placeholder="1 guest" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[1, 2, 3, 4, 5, 6].map((num) => (
+                          <SelectItem key={num} value={num.toString()}>
+                            {num} {num === 1 ? 'guest' : 'guests'}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <Button
+                    className="w-full h-12 text-lg bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
+                    onClick={handleBookNow}
+                    disabled={isBooking}
+                  >
+                    {isBooking ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Checking availability...
+                      </>
+                    ) : (
+                      'Reserve'
+                    )}
+                  </Button>
+
+                  <div className="text-center text-sm text-muted-foreground py-2">
+                    You won't be charged yet
+                  </div>
+
+                  <div className="flex justify-between text-muted-foreground pt-4 border-t">
+                    <span>KES {property.price_per_night} x 5 nights</span>
+                    <span>KES {property.price_per_night * 5}</span>
+                  </div>
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Cleaning fee</span>
+                    <span>KES 2,500</span>
+                  </div>
+                  <div className="flex justify-between text-foreground font-bold pt-4 border-t text-lg">
+                    <span>Total before taxes</span>
+                    <span>KES {property.price_per_night * 5 + 2500}</span>
+                  </div>
+
+                </div>
               </div>
-              <Button onClick={handleBookNow} disabled={isBooking} className="bg-primary px-8">
-                {isBooking ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Reserve'}
-              </Button>
             </div>
+          </div>
+
+          {/* Mobile Fixed Bottom Bar */}
+          <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border z-40 flex items-center justify-between safe-area-bottom shadow-[0_-5px_10px_rgba(0,0,0,0.05)]">
+            <div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-xl font-bold font-serif text-primary">KES {property.price_per_night}</span>
+                <span className="text-sm text-muted-foreground">/ night</span>
+              </div>
+              <div className="text-xs text-muted-foreground underline">{checkIn && checkOut ? `${Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))} nights` : 'Select dates'}</div>
+            </div>
+            <Button onClick={handleBookNow} disabled={isBooking} className="bg-primary px-8">
+              {isBooking ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Reserve'}
+            </Button>
           </div>
         </div>
       </main>
