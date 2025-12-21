@@ -161,6 +161,30 @@ export const api = {
         return data as Booking[];
     },
 
+    async getPropertyBookings(propertyId: string) {
+        const { data, error } = await supabase
+            .from('bookings')
+            .select('check_in, check_out')
+            .eq('property_id', propertyId)
+            // Only future or current bookings matter for availability
+            .gte('check_out', new Date().toISOString());
+
+        if (error) throw error;
+        return data as { check_in: string; check_out: string }[];
+    },
+
+    async checkAvailability(propertyId: string, checkIn: Date, checkOut: Date) {
+        const { data, error } = await supabase
+            .rpc('check_availability', {
+                property_id: propertyId,
+                check_in_date: checkIn.toISOString(),
+                check_out_date: checkOut.toISOString()
+            });
+
+        if (error) throw error;
+        return data as boolean;
+    },
+
     async createBooking(booking: {
         property_id: string;
         guest_id: string;

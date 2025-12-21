@@ -72,6 +72,7 @@ const PropertyDetail = () => {
   const [checkInOpen, setCheckInOpen] = React.useState(false);
   const [checkOutOpen, setCheckOutOpen] = React.useState(false);
   const [reviews, setReviews] = React.useState<Review[]>([]);
+  const [disabledDates, setDisabledDates] = React.useState<Date[]>([]);
 
   const fetchReviews = async () => {
     if (!id) return;
@@ -85,18 +86,37 @@ const PropertyDetail = () => {
     }
   };
 
-  React.useEffect(() => {
-    const fetchProperty = async () => {
-      if (!id) return;
-      try {
-        setIsLoading(true);
-        // Fetch property first (Critical)
-        const propertyData = await api.getProperty(id);
-        setProperty(propertyData);
+  const fetchAvailability = async () => {
+    if (!id) return;
+    try {
+      const bookings = await api.getPropertyBookings(id);
+      const disabled: Date[] = [];
+      bookings.forEach(booking => {
+        const start = new Date(booking.check_in);
+        const end = new Date(booking.check_out);
+        // Iterate from start to end (inclusive of start, exclusive of end for checkout logic usually, 
+        // but for disabling selection, we might want to disable the night)
+        // Let's disable all days in the range. 
+        let current = new Date(start);
+        while (current < end) {
+          disabled.push(new Date(current));
+          current.setDate(current.getDate() + 1);
+        }
+        // Depending on policy, checkout day might be available for checkin. 
+        // If so, we don't disable 'end'. 
+      });
+      setDisabledDates(disabled);
+    } catch (error) {
+      console.error('Error fetching availability:', error);
+    }
+  };
 
-        // Fetch reviews independently (Non-critical)
-        // We don't await this inside the same try block to avoid blocking the page
-        fetchReviews();
+  React.useEffect(() => {
+    const loadProperty = async () => {
+      try {
+        if (!id) return;
+        const data = await api.getProperty(id);
+        setProperty(data);
       } catch (error) {
         console.error('Error fetching property:', error);
         toast.error('Failed to load property details');
@@ -105,21 +125,24 @@ const PropertyDetail = () => {
       }
     };
 
-    fetchProperty();
+    loadProperty();
+    fetchReviews();
+    fetchAvailability();
   }, [id]);
 
-  const handleBookNow = async () => {
+  const checkAuth = () => {
     if (!user) {
       setShowLoginDialog(true);
-      return;
+      return false;
     }
+    return true;
+  };
 
-    if (!checkIn || !checkOut) {
-      toast.error('Please select check-in and check-out dates');
-      return;
-    }
+  const handleBookNow = async () => {
+    const isAuthed = checkAuth();
+    if (!isAuthed) return;
 
-    if (!property) return;
+    if (!user || !property || !checkIn || !checkOut) return;
 
     if (user.id === property.host_id) {
       toast.error("You cannot book your own property");
@@ -128,6 +151,14 @@ const PropertyDetail = () => {
 
     try {
       setIsBooking(true);
+
+      // 1. Check Availability
+      const isAvailable = await api.checkAvailability(property.id, checkIn, checkOut);
+      if (!isAvailable) {
+        toast.error('These dates are no longer available. Please choose another range.');
+        setIsBooking(false);
+        return;
+      }
 
       const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
       const totalPrice = property.price_per_night * nights; // Add cleaning fee logic later
@@ -381,6 +412,12 @@ const PropertyDetail = () => {
                               setCheckIn(date);
                               setCheckInOpen(false);
                             }}
+                            disabled={(date) => {
+                              // Disable past dates
+                              if (date < new Date(new Date().setHours(0, 0, 0, 0))) return true;
+                              // Disable booked dates
+                              return disabledDates.some(d => d.toDateString() === date.toDateString());
+                            }}
                             initialFocus
                           />
                         </PopoverContent>
@@ -401,6 +438,13 @@ const PropertyDetail = () => {
                             onSelect={(date) => {
                               setCheckOut(date);
                               setCheckOutOpen(false);
+                            }}
+                            disabled={(date) => {
+                              // Disable past dates + CheckIn date (must be at least 1 night)
+                              if (checkIn && date <= checkIn) return true;
+                              if (date < new Date(new Date().setHours(0, 0, 0, 0))) return true;
+                              // Disable booked dates
+                              return disabledDates.some(d => d.toDateString() === date.toDateString());
                             }}
                             initialFocus
                           />

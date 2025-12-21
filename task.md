@@ -87,3 +87,8 @@
 - [x] Verify Dashboard Mobile View (Tabs, layout) <!-- id: 49 -->
 - [x] Verify Auth Pages on small screens <!-- id: 50 -->
 - [x] Ensure Toasts/Dialogs look good on mobile <!-- id: 51 -->
+
+## Availability & Core Logic
+- [ ] Implement database-level availability check function (`check_availability`)
+- [ ] Update frontend to disable booked dates in calendar
+- [ ] Prevent double-booking submission
