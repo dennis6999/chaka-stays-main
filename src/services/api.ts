@@ -347,5 +347,20 @@ export const api = {
             .eq('user_id', userId);
 
         if (error) throw error;
+    },
+
+    async getUserFavorites(userId: string) {
+        const { data, error } = await supabase
+            .from('favorites')
+            .select(`
+                property_id,
+                property:properties(*)
+            `)
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        // Map to return just the property objects
+        return data.map(f => f.property) as unknown as Property[];
     }
 };

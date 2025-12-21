@@ -4,9 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Calendar, Home, User, Plus, Edit, Trash, MapPin } from 'lucide-react';
+import { Loader2, Calendar, Home, User, Plus, Edit, Trash, MapPin, Heart } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import PropertyCard from '@/components/PropertyCard';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,6 +29,7 @@ const Dashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
+  const [favorites, setFavorites] = useState<Property[]>([]);
   const [analytics, setAnalytics] = useState({
     bookingGrowth: 0,
     revenueGrowth: 0,
@@ -104,6 +106,14 @@ const Dashboard: React.FC = () => {
         }
       } catch (err) {
         console.error("Error fetching host data", err);
+      }
+
+      // --- Favorites ---
+      try {
+        const userFavorites = await api.getUserFavorites(user.id);
+        setFavorites(userFavorites);
+      } catch (err) {
+        console.error("Error fetching favorites", err);
       }
 
       setAnalytics({
@@ -316,6 +326,12 @@ const Dashboard: React.FC = () => {
                 className="rounded-none border-b-2 border-transparent px-4 py-3 font-serif font-medium text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent transition-all text-lg whitespace-nowrap"
               >
                 Bookings
+              </TabsTrigger>
+              <TabsTrigger
+                value="favorites"
+                className="rounded-none border-b-2 border-transparent px-4 py-3 font-serif font-medium text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent transition-all text-lg whitespace-nowrap"
+              >
+                Favorites
               </TabsTrigger>
               <TabsTrigger
                 value="properties"
@@ -848,6 +864,37 @@ const Dashboard: React.FC = () => {
                   </CardContent>
                 </Card>
               </div>
+            </TabsContent>
+
+            {/* Favorites Tab */}
+            <TabsContent value="favorites" className="space-y-6 animate-in fade-in-50 duration-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-serif font-bold">My Favorites</h2>
+                  <p className="text-muted-foreground">Properties you've saved for later</p>
+                </div>
+              </div>
+
+              {isLoading ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : favorites.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {favorites.map((property) => (
+                    <PropertyCard key={property.id} property={property} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-16 bg-white rounded-xl border border-neutral/50">
+                  <div className="bg-neutral/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Heart className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">No favorites yet</h3>
+                  <p className="text-muted-foreground mb-6">Start exploring and save places you love!</p>
+                  <Button onClick={() => navigate('/properties')} variant="outline">Explore Properties</Button>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </div>
