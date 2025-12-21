@@ -18,6 +18,11 @@ const Dashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
+  const [analytics, setAnalytics] = useState({
+    bookingGrowth: 0,
+    revenueGrowth: 0,
+    totalRevenue: 0
+  });
   const [activeTab, setActiveTab] = useState('overview');
   const [showAddProperty, setShowAddProperty] = useState(false);
   const [newProperty, setNewProperty] = useState({
@@ -54,6 +59,45 @@ const Dashboard: React.FC = () => {
       if (activeTab === 'bookings' || activeTab === 'overview') {
         const userBookings = await api.getUserBookings(user.id);
         setBookings(userBookings);
+
+        // Calculate Analytics
+        const now = new Date();
+        const thisMonth = now.getMonth();
+        const thisYear = now.getFullYear();
+
+        const lastMonth = thisMonth === 0 ? 11 : thisMonth - 1;
+        const lastMonthYear = thisMonth === 0 ? thisYear - 1 : thisYear;
+
+        const currentMonthBookings = userBookings.filter(b => {
+          const d = new Date(b.created_at);
+          return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+        });
+
+        const lastMonthBookings = userBookings.filter(b => {
+          const d = new Date(b.created_at);
+          return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
+        });
+
+        // Booking Growth
+        const bookingGrowth = lastMonthBookings.length === 0
+          ? (currentMonthBookings.length > 0 ? 100 : 0)
+          : ((currentMonthBookings.length - lastMonthBookings.length) / lastMonthBookings.length) * 100;
+
+        // Revenue Calculation
+        const currentRevenue = currentMonthBookings.reduce((sum, b) => sum + b.total_price, 0);
+        const lastRevenue = lastMonthBookings.reduce((sum, b) => sum + b.total_price, 0);
+
+        const revenueGrowth = lastRevenue === 0
+          ? (currentRevenue > 0 ? 100 : 0)
+          : ((currentRevenue - lastRevenue) / lastRevenue) * 100;
+
+        const totalRevenue = userBookings.reduce((sum, b) => sum + b.total_price, 0);
+
+        setAnalytics({
+          bookingGrowth: Math.round(bookingGrowth),
+          revenueGrowth: Math.round(revenueGrowth),
+          totalRevenue
+        });
       }
 
       if (activeTab === 'properties' || activeTab === 'overview') {
@@ -230,7 +274,9 @@ const Dashboard: React.FC = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="text-3xl font-bold font-serif">{bookings.length}</div>
-                    <p className="text-xs text-muted-foreground mt-1">+20% from last month</p>
+                    <p className={`text-xs mt-1 ${analytics.bookingGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {analytics.bookingGrowth >= 0 ? '+' : ''}{analytics.bookingGrowth}% from last month
+                    </p>
                   </CardContent>
                 </Card>
                 <Card className="bg-card border-border shadow-sm hover:shadow-md transition-all">
@@ -252,9 +298,11 @@ const Dashboard: React.FC = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="text-3xl font-bold font-serif">
-                      KES {bookings.reduce((sum, booking) => sum + booking.total_price, 0).toLocaleString()}
+                      KES {analytics.totalRevenue.toLocaleString()}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">+12% from last month</p>
+                    <p className={`text-xs mt-1 ${analytics.revenueGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {analytics.revenueGrowth >= 0 ? '+' : ''}{analytics.revenueGrowth}% from last month
+                    </p>
                   </CardContent>
                 </Card>
               </div>
