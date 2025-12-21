@@ -14,6 +14,7 @@ import NotFound from "./pages/NotFound";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@radix-ui/react-tooltip';
 import { Toaster } from 'sonner';
+import { Analytics } from "@vercel/analytics/react";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,7 @@ const App: React.FC = () => {
               <Route path="/about" element={<About />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <Analytics />
           </Router>
         </AuthProvider>
       </TooltipProvider>

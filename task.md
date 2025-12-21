@@ -64,3 +64,5 @@
 
 ## Deployment Debugging
 - [x] Investigate infinite loading on Home and Properties pages (Production) <!-- id: 41 -->
+## Post-Deployment
+- [x] Integrate Vercel Analytics <!-- id: 42 -->
