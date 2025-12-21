@@ -55,4 +55,9 @@
 ## Mobile Menu Upgrade
 - [x] Replace basic mobile menu with premium `Sheet` drawer <!-- id: 34 -->
 - [x] Add animations and proper spacing to mobile nav links <!-- id: 35 -->
-- [x] Ensure "Host a Property" CTA is prominent on mobile <!-- id: 36 -->
+## Search Functionality
+- [x] Connect `SearchForm` to `/properties` via URL query params <!-- id: 37 -->
+- [x] Update `Properties` page to read and apply initial filters from URL <!-- id: 38 -->
+- [x] Enhance `Properties` filter logic to support exact guest counts and location <!-- id: 39 -->
+## Authentication Polish
+- [x] Show clear "Check your email" message after signup <!-- id: 40 -->

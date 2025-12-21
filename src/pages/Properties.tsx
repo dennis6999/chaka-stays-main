@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import PropertyCard from '@/components/PropertyCard';
@@ -28,9 +29,11 @@ import { toast } from 'sonner';
 
 const Properties = () => {
   // State for Filters
-  const [priceRange, setPriceRange] = useState([0, 20000]); // Max price updated to 20k
+  const [searchParams] = useSearchParams();
+  const [priceRange, setPriceRange] = useState([0, 20000]);
   const [selectedType, setSelectedType] = useState('all');
   const [guestCount, setGuestCount] = useState('any');
+  const [selectedLocation, setSelectedLocation] = useState('all');
   const [sortOption, setSortOption] = useState('recommended');
 
   // Data State
@@ -39,7 +42,21 @@ const Properties = () => {
 
   useEffect(() => {
     fetchProperties();
-  }, []);
+
+    // Initialize from URL params
+    const locParam = searchParams.get('location');
+    const guestsParam = searchParams.get('guests');
+
+    if (locParam) setSelectedLocation(locParam.toLowerCase());
+
+    if (guestsParam) {
+      const g = parseInt(guestsParam);
+      if (g >= 7) setGuestCount('7+');
+      else if (g >= 5) setGuestCount('5-6');
+      else if (g >= 3) setGuestCount('3-4');
+      else if (g >= 1) setGuestCount('1-2');
+    }
+  }, [searchParams]);
 
   const fetchProperties = async () => {
     try {
@@ -56,6 +73,12 @@ const Properties = () => {
   // Filtering and Sorting Logic
   const filteredAndSortedProperties = useMemo(() => {
     let result = [...properties];
+
+    // 0. Filter by Location
+    if (selectedLocation !== 'all') {
+      // Simple substring match for demo (e.g. "chaka" matches "Chaka Town")
+      result = result.filter(p => p.location.toLowerCase().includes(selectedLocation));
+    }
 
     // 1. Filter by Type
     if (selectedType !== 'all') {
@@ -88,17 +111,17 @@ const Properties = () => {
         break;
       case 'recommended':
       default:
-        // Default sort
         break;
     }
 
     return result;
-  }, [properties, selectedType, priceRange, guestCount, sortOption]);
+  }, [properties, selectedType, priceRange, guestCount, sortOption, selectedLocation]);
 
   const clearFilters = () => {
     setPriceRange([0, 20000]);
     setSelectedType('all');
     setGuestCount('any');
+    setSelectedLocation('all');
     setSortOption('recommended');
     toast.info('Filters cleared');
   };
@@ -106,6 +129,22 @@ const Properties = () => {
   // Reusable Filter Content
   const FilterContent = ({ isMobile = false }) => (
     <div className={`space-y-8 ${isMobile ? 'mt-6' : ''}`}>
+
+      {/* Location Filter */}
+      <div className="space-y-3">
+        <h3 className="text-sm font-medium text-foreground/80">Location</h3>
+        <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select location" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Any Location</SelectItem>
+            <SelectItem value="chaka">Chaka Town</SelectItem>
+            <SelectItem value="nyeri">Nyeri</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Property Type Filter */}
       <div className="space-y-3">
         <h3 className="text-sm font-medium text-foreground/80">Property Type</h3>
@@ -239,7 +278,7 @@ const Properties = () => {
                   <h2 className="text-xl font-serif font-semibold flex items-center">
                     <Filter className="h-5 w-5 mr-2 text-primary" /> Filters
                   </h2>
-                  {(selectedType !== 'all' || guestCount !== 'any' || priceRange[0] > 0 || priceRange[1] < 20000) && (
+                  {(selectedLocation !== 'all' || selectedType !== 'all' || guestCount !== 'any' || priceRange[0] > 0 || priceRange[1] < 20000) && (
                     <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 px-2 text-xs text-muted-foreground hover:text-destructive">
                       Clear all
                     </Button>
@@ -312,7 +351,7 @@ const Properties = () => {
                 </>
               )}
 
-              {filteredAndSortedProperties.length > 0 && (
+              {filteredAndSortedProperties.length > 9 && (
                 <div className="mt-8 flex justify-center">
                   <div className="inline-flex items-center justify-center gap-2 bg-white/80 backdrop-blur-md p-1 rounded-lg border shadow-sm">
                     <Button variant="ghost" className="h-9 w-9 p-0" disabled>&larr;</Button>

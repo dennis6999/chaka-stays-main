@@ -17,82 +17,102 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 
 const SearchForm = () => {
+  const navigate = useNavigate();
+  const [location, setLocation] = React.useState('chaka');
   const [checkIn, setCheckIn] = React.useState<Date | undefined>(undefined);
   const [checkOut, setCheckOut] = React.useState<Date | undefined>(undefined);
+  const [guests, setGuests] = React.useState('2');
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const params = new URLSearchParams();
+
+    if (location) params.append('location', location);
+    if (guests) params.append('guests', guests);
+    if (checkIn) params.append('checkIn', checkIn.toISOString());
+    if (checkOut) params.append('checkOut', checkOut.toISOString());
+
+    navigate(`/properties?${params.toString()}`);
+  };
 
   return (
     <div className="bg-white p-4 sm:p-6 rounded-xl shadow-md">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="location" className="text-sm font-medium">Location</Label>
-          <Select defaultValue="chaka">
-            <SelectTrigger id="location" className="h-12 bg-muted/50 border-0 focus:ring-1 focus:ring-primary/20">
-              <SelectValue placeholder="Select location" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="chaka">Chaka Town</SelectItem>
-              <SelectItem value="nyeri">Nyeri</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      <form onSubmit={handleSearch}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-6">
+          <div className="space-y-2">
+            <Label htmlFor="location" className="text-sm font-medium">Location</Label>
+            <Select value={location} onValueChange={setLocation}>
+              <SelectTrigger id="location" className="h-12 bg-muted/50 border-0 focus:ring-1 focus:ring-primary/20">
+                <SelectValue placeholder="Select location" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="chaka">Chaka Town</SelectItem>
+                <SelectItem value="nyeri">Nyeri</SelectItem>
+                <SelectItem value="nanyuki">Nanyuki</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Check In</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className="w-full h-12 justify-start text-left font-normal bg-muted/50 border-0 hover:bg-muted"
-              >
-                <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-                {checkIn ? format(checkIn, "PPP") : <span>Select date</span>}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Check In</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full h-12 justify-start text-left font-normal bg-muted/50 border-0 hover:bg-muted"
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
+                  {checkIn ? <span className="truncate">{format(checkIn, "LLL dd, y")}</span> : <span>Select date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={checkIn} onSelect={setCheckIn} initialFocus />
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Check Out</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full h-12 justify-start text-left font-normal bg-muted/50 border-0 hover:bg-muted"
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
+                  {checkOut ? <span className="truncate">{format(checkOut, "LLL dd, y")}</span> : <span>Select date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={checkOut} onSelect={setCheckOut} initialFocus />
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="guests" className="text-sm font-medium">Guests</Label>
+            <div className="flex gap-2">
+              <div className="relative flex-grow">
+                <Input
+                  id="guests"
+                  type="number"
+                  min="1"
+                  value={guests}
+                  onChange={(e) => setGuests(e.target.value)}
+                  className="h-12 pr-10 bg-muted/50 border-0 focus:ring-1 focus:ring-primary/20"
+                />
+                <Users className="absolute right-3 top-3.5 h-5 w-5 text-muted-foreground/50" />
+              </div>
+              <Button type="submit" className="h-12 w-12 shrink-0 bg-primary hover:bg-primary/90 rounded-xl shadow-lg shadow-primary/25 transition-transform active:scale-95">
+                <Search className="h-5 w-5" />
               </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar mode="single" selected={checkIn} onSelect={setCheckIn} initialFocus />
-            </PopoverContent>
-          </Popover>
-        </div>
-
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Check Out</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className="w-full h-12 justify-start text-left font-normal bg-muted/50 border-0 hover:bg-muted"
-              >
-                <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-                {checkOut ? format(checkOut, "PPP") : <span>Select date</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar mode="single" selected={checkOut} onSelect={setCheckOut} initialFocus />
-            </PopoverContent>
-          </Popover>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="guests" className="text-sm font-medium">Guests</Label>
-          <div className="flex gap-2">
-            <div className="relative flex-grow">
-              <Input
-                id="guests"
-                type="number"
-                min="1"
-                defaultValue="2"
-                className="h-12 pr-10 bg-muted/50 border-0 focus:ring-1 focus:ring-primary/20"
-              />
-              <Users className="absolute right-3 top-3.5 h-5 w-5 text-muted-foreground/50" />
             </div>
-            <Button type="submit" className="h-12 w-12 shrink-0 bg-primary hover:bg-primary/90 rounded-xl shadow-lg shadow-primary/25 transition-transform active:scale-95">
-              <Search className="h-5 w-5" />
-            </Button>
           </div>
         </div>
-      </div>
+      </form>
     </div>
   );
 };

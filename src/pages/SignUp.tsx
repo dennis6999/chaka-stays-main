@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, Home, Loader2 } from 'lucide-react';
+import { User, Home, Loader2, Mail, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '../contexts/AuthContext';
 import { DEV_SERVER_URL, getCurrentOrigin } from '@/config/google';
@@ -15,6 +15,7 @@ import { DEV_SERVER_URL, getCurrentOrigin } from '@/config/google';
 const SignUp: React.FC = () => {
   const [userType, setUserType] = useState<'guest' | 'host'>('guest');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -57,11 +58,12 @@ const SignUp: React.FC = () => {
         throw error;
       }
 
+      setIsSuccess(true);
       toast({
-        title: 'Welcome to Chaka Stays',
-        description: 'Your account has been created successfully. Please check your email to confirm your account.',
+        title: 'Account created',
+        description: 'Please confirm your email address.',
       });
-      navigate('/dashboard');
+      // Removed navigate('/dashboard') to show success screen
     } catch (error: any) {
       console.error('Registration error:', error);
       toast({
@@ -74,7 +76,49 @@ const SignUp: React.FC = () => {
     }
   };
 
-
+  if (isSuccess) {
+    return (
+      <div className="min-h-screen flex w-full">
+        <div className="flex-1 flex items-center justify-center p-8 lg:p-12 bg-background">
+          <div className="w-full max-w-md space-y-6 text-center animate-fade-in">
+            <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+              <Mail className="h-8 w-8 text-primary" />
+            </div>
+            <h2 className="text-3xl font-serif font-bold tracking-tight text-primary">Check your inbox</h2>
+            <p className="text-muted-foreground font-light text-lg">
+              We've sent a confirmation link to <span className="font-medium text-foreground">{formData.email || formData.business_email}</span>.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Please verify your account to complete your registration and log in.
+            </p>
+            <div className="pt-6">
+              <Button asChild variant="outline" className="w-full h-12">
+                <Link to="/auth">
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Back to Login
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+        {/* Visual Side */}
+        <div className="hidden lg:flex lg:w-1/2 relative bg-[#1A2F25] overflow-hidden">
+          <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?q=80&w=2670&auto=format&fit=crop')" }} />
+          <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px]" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#1A2F25] via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/40 to-transparent" />
+          <div className="relative z-10 p-16 flex flex-col justify-between h-full text-white">
+            <Link to="/" className="text-2xl font-serif font-bold tracking-tight text-white/90">Chaka Stays</Link>
+            <div className="space-y-6 max-w-lg mb-20">
+              <h1 className="text-5xl font-serif font-medium leading-tight">Almost there...</h1>
+              <p className="text-lg text-white/80 font-light leading-relaxed">
+                Your journey with Chaka Stays is just one click away.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex w-full">
