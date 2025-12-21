@@ -324,8 +324,8 @@ const Properties = () => {
         </div>
       </div>
 
-      <div className="chaka-container py-8 flex-grow">
-        <div className="flex flex-col lg:flex-row gap-8">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 py-6 flex-grow">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
 
           {/* Desktop Sidebar */}
           <aside className="hidden lg:block w-72 flex-shrink-0">
