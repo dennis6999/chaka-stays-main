@@ -38,6 +38,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { format } from 'date-fns';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { useAuth } from '@/contexts/AuthContext';
@@ -431,20 +439,48 @@ const PropertyDetail = () => {
           </div>
 
           {/* Mobile Fixed Bottom Bar */}
+          {/* Mobile Fixed Bottom Bar */}
           <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border z-40 flex items-center justify-between safe-area-bottom shadow-[0_-5px_10px_rgba(0,0,0,0.05)]">
-            <div>
-              <div className="flex items-baseline gap-1">
-                <span className="text-xl font-bold font-serif text-primary">KES {property.price_per_night}</span>
-                <span className="text-sm text-muted-foreground">/ night</span>
-              </div>
-              <div className="text-xs text-muted-foreground underline">{checkIn && checkOut ? `${Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))} nights` : 'Select dates'}</div>
-            </div>
+            <Sheet>
+              <SheetTrigger asChild>
+                <div className="cursor-pointer">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-xl font-bold font-serif text-primary">KES {property.price_per_night}</span>
+                    <span className="text-sm text-muted-foreground">/ night</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground underline">
+                    {checkIn && checkOut ? `${Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))} nights` : 'Select dates'}
+                  </div>
+                </div>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="h-[80vh] rounded-t-xl">
+                <SheetHeader>
+                  <SheetTitle>Select Dates</SheetTitle>
+                  <SheetDescription>
+                    Add your travel dates for exact pricing
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="flex flex-col gap-4 mt-6 h-full overflow-y-auto pb-10">
+                  <div className="space-y-2">
+                    <Label>Check-in</Label>
+                    <Calendar mode="single" selected={checkIn} onSelect={setCheckIn} className="rounded-md border mx-auto" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Check-out</Label>
+                    <Calendar mode="single" selected={checkOut} onSelect={setCheckOut} className="rounded-md border mx-auto" />
+                  </div>
+                  <Button onClick={() => document.body.click()} className="w-full mt-4">Confirm Dates</Button>
+                </div>
+              </SheetContent>
+            </Sheet>
+
             <Button onClick={handleBookNow} disabled={isBooking} className="bg-primary px-8">
               {isBooking ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Reserve'}
             </Button>
           </div>
         </div>
-      </main>
+    </div>
+      </main >
       <Footer />
       <AlertDialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
         <AlertDialogContent>
@@ -464,7 +500,7 @@ const PropertyDetail = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </div >
   );
 };
 
