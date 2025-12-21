@@ -128,8 +128,14 @@ const PropertyDetail = () => {
   React.useEffect(() => {
     const loadProperty = async () => {
       try {
-        if (!id) return;
+        console.log('PropertyDetail: Loading property...', { id });
+        if (!id) {
+          console.error('PropertyDetail: No ID provided');
+          return;
+        }
         const data = await api.getProperty(id);
+        console.log('PropertyDetail: Loaded data', data);
+        if (!data) console.error('PropertyDetail: Data is null');
         setProperty(data);
       } catch (error) {
         console.error('Error fetching property:', error);
@@ -224,6 +230,7 @@ const PropertyDetail = () => {
     return (
       <div className="min-h-screen flex items-center justify-center flex-col gap-4">
         <h2 className="text-2xl font-bold">Property not found</h2>
+        <p className="text-muted-foreground font-mono bg-muted p-2 rounded">Debug ID: {id || 'undefined'}</p>
         <Button onClick={() => navigate('/')}>Return Home</Button>
       </div>
     );
