@@ -479,8 +479,7 @@ const PropertyDetail = () => {
             </Button>
           </div>
         </div>
-    </div>
-      </main >
+      </main>
       <Footer />
       <AlertDialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
         <AlertDialogContent>
@@ -500,7 +499,7 @@ const PropertyDetail = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div >
+    </div>
   );
 };
 
