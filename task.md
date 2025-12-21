@@ -61,3 +61,6 @@
 - [x] Enhance `Properties` filter logic to support exact guest counts and location <!-- id: 39 -->
 ## Authentication Polish
 - [x] Show clear "Check your email" message after signup <!-- id: 40 -->
+
+## Deployment Debugging
+- [ ] Investigate infinite loading on Properties page <!-- id: 41 -->

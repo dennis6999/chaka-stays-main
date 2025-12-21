@@ -77,13 +77,13 @@ const Properties = () => {
     // 0. Filter by Location
     if (selectedLocation !== 'all') {
       // Simple substring match for demo (e.g. "chaka" matches "Chaka Town")
-      result = result.filter(p => p.location.toLowerCase().includes(selectedLocation));
+      result = result.filter(p => p.location && p.location.toLowerCase().includes(selectedLocation));
     }
 
     // 1. Filter by Type
     if (selectedType !== 'all') {
       result = result.filter(
-        (p) => p.property_type?.toLowerCase() === selectedType.toLowerCase()
+        (p) => p.property_type && p.property_type.toLowerCase() === selectedType.toLowerCase()
       );
     }
 
