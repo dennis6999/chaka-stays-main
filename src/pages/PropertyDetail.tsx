@@ -49,6 +49,7 @@ import {
 } from "@/components/ui/sheet";
 import { format } from 'date-fns';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
@@ -313,11 +314,12 @@ const PropertyDetail = () => {
                 {reviews.map((review) => (
                   <div key={review.id} className="space-y-4">
                     <div className="flex items-center gap-3">
-                      <img
-                        src={review.user?.avatar_url || "https://randomuser.me/api/portraits/lego/1.jpg"}
-                        alt={review.user?.full_name}
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
+                      <Avatar className="h-10 w-10 border border-border">
+                        <AvatarImage src={review.user?.avatar_url} className="object-cover" />
+                        <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                          {review.user?.full_name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
                       <div>
                         <div className="font-semibold">{review.user?.full_name || 'Guest'}</div>
                         <div className="text-sm text-muted-foreground">

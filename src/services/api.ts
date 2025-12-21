@@ -208,6 +208,40 @@ export const api = {
         return data;
     },
 
+    async updateProfile(userId: string, updates: { full_name?: string; phone?: string; avatar_url?: string }) {
+        const { data, error } = await supabase
+            .from('profiles')
+            .update(updates)
+            .eq('id', userId)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    },
+
+    async uploadAvatar(file: File) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `avatar_${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+            .from('avatars')
+            .upload(filePath, file);
+
+        if (uploadError) {
+            // If avatars bucket doesn't exist, try property-images as fallback or handle error
+            console.error('Avatar upload error:', uploadError);
+            throw uploadError;
+        }
+
+        const { data } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(filePath);
+
+        return data.publicUrl;
+    },
+
     // --- Storage ---
 
     async uploadImage(file: File) {

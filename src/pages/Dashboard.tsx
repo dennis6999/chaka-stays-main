@@ -14,7 +14,7 @@ import { useNavigate } from 'react-router-dom';
 import { api, Property, Booking } from '../services/api';
 
 const Dashboard: React.FC = () => {
-  const { user, loading, logout } = useAuth();
+  const { user, loading, logout, refreshUser } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
@@ -24,6 +24,14 @@ const Dashboard: React.FC = () => {
     totalRevenue: 0
   });
   const [activeTab, setActiveTab] = useState('overview');
+
+  // Profile Editing State
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    full_name: '',
+    phone: ''
+  });
+
   const [showAddProperty, setShowAddProperty] = useState(false);
   const [newProperty, setNewProperty] = useState({
     name: '',
@@ -145,6 +153,37 @@ const Dashboard: React.FC = () => {
     } catch (error) {
       console.error('Error saving property:', error);
       toast.error('Failed to save property');
+    }
+  };
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    try {
+      await api.updateProfile(user.id, profileForm);
+      await refreshUser();
+      setIsEditingProfile(false);
+      toast.success('Profile updated successfully');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error('Failed to update profile');
+    }
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    try {
+      toast.info('Uploading avatar...');
+      const url = await api.uploadAvatar(file);
+      await api.updateProfile(user.id, { avatar_url: url });
+      await refreshUser();
+      toast.success('Avatar updated successfully');
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      toast.error('Failed to upload avatar');
     }
   };
 
@@ -625,10 +664,26 @@ const Dashboard: React.FC = () => {
                   </CardHeader>
                   <CardContent className="space-y-8">
                     <div className="flex flex-col md:flex-row items-center gap-8">
-                      <Avatar className="h-32 w-32 border-4 border-background shadow-xl">
-                        <AvatarImage src={user.avatar_url} />
-                        <AvatarFallback className="text-4xl bg-primary text-primary-foreground">{user.name?.charAt(0)}</AvatarFallback>
-                      </Avatar>
+                      <div className="relative group cursor-pointer">
+                        <Avatar className="h-32 w-32 border-4 border-background shadow-xl">
+                          <AvatarImage src={user.avatar_url} className="object-cover" />
+                          <AvatarFallback className="text-4xl bg-primary text-primary-foreground">{user.name?.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <label htmlFor="avatar-upload" className="cursor-pointer text-white flex flex-col items-center">
+                            <Edit className="h-6 w-6 mb-1" />
+                            <span className="text-xs font-medium">Change</span>
+                          </label>
+                          <input
+                            id="avatar-upload"
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleAvatarUpload}
+                          />
+                        </div>
+                      </div>
+
                       <div className="text-center md:text-left space-y-2">
                         <h3 className="text-3xl font-serif font-bold">{user.name}</h3>
                         <div className="flex flex-wrap gap-2 justify-center md:justify-start">
@@ -642,47 +697,82 @@ const Dashboard: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-border">
-                      <div className="space-y-4">
-                        <h4 className="text-lg font-semibold flex items-center">
-                          <User className="h-5 w-5 mr-2 text-primary" /> Account Details
-                        </h4>
-                        <div className="space-y-3 bg-neutral/5 p-4 rounded-lg">
-                          <div>
-                            <span className="text-xs text-muted-foreground uppercase tracking-wider block">Full Name</span>
-                            <span className="font-medium">{user.name}</span>
+                    {!isEditingProfile ? (
+                      <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-border">
+                          <div className="space-y-4">
+                            <h4 className="text-lg font-semibold flex items-center">
+                              <User className="h-5 w-5 mr-2 text-primary" /> Account Details
+                            </h4>
+                            <div className="space-y-3 bg-neutral/5 p-4 rounded-lg">
+                              <div>
+                                <span className="text-xs text-muted-foreground uppercase tracking-wider block">Full Name</span>
+                                <span className="font-medium">{user.name}</span>
+                              </div>
+                              <div>
+                                <span className="text-xs text-muted-foreground uppercase tracking-wider block">Email Address</span>
+                                <span className="font-medium">{user.email}</span>
+                              </div>
+                              <div>
+                                <span className="text-xs text-muted-foreground uppercase tracking-wider block">Account Type</span>
+                                <span className="font-medium capitalize">{user.user_type}</span>
+                              </div>
+                            </div>
                           </div>
-                          <div>
-                            <span className="text-xs text-muted-foreground uppercase tracking-wider block">Email Address</span>
-                            <span className="font-medium">{user.email}</span>
-                          </div>
-                          <div>
-                            <span className="text-xs text-muted-foreground uppercase tracking-wider block">Account Type</span>
-                            <span className="font-medium capitalize">{user.user_type}</span>
+
+                          <div className="space-y-4">
+                            <h4 className="text-lg font-semibold flex items-center">
+                              <Home className="h-5 w-5 mr-2 text-primary" /> Contact Info
+                            </h4>
+                            <div className="space-y-3 bg-neutral/5 p-4 rounded-lg">
+                              <div>
+                                <span className="text-xs text-muted-foreground uppercase tracking-wider block">Phone Number</span>
+                                <span className="font-medium">{user.phone || 'Not provided'}</span>
+                              </div>
+                              <div>
+                                <span className="text-xs text-muted-foreground uppercase tracking-wider block">Location</span>
+                                <span className="font-medium">Chaka, Kenya</span>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      <div className="space-y-4">
-                        <h4 className="text-lg font-semibold flex items-center">
-                          <Home className="h-5 w-5 mr-2 text-primary" /> Contact Info
-                        </h4>
-                        <div className="space-y-3 bg-neutral/5 p-4 rounded-lg">
-                          <div>
-                            <span className="text-xs text-muted-foreground uppercase tracking-wider block">Phone Number</span>
-                            <span className="font-medium">{user.phone || 'Not provided'}</span>
+                        <div className="flex justify-end pt-4">
+                          <Button variant="outline" onClick={() => {
+                            setProfileForm({ full_name: user.name || '', phone: user.phone || '' });
+                            setIsEditingProfile(true);
+                          }}>Edit Profile</Button>
+                        </div>
+                      </>
+                    ) : (
+                      <form onSubmit={handleUpdateProfile} className="space-y-6 pt-4 border-t border-border animate-in slide-in-from-top-2">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Full Name</label>
+                            <input
+                              type="text"
+                              value={profileForm.full_name}
+                              onChange={(e) => setProfileForm({ ...profileForm, full_name: e.target.value })}
+                              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              required
+                            />
                           </div>
-                          <div>
-                            <span className="text-xs text-muted-foreground uppercase tracking-wider block">Location</span>
-                            <span className="font-medium">Chaka, Kenya</span>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Phone Number</label>
+                            <input
+                              type="tel"
+                              value={profileForm.phone}
+                              onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            />
                           </div>
                         </div>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-end pt-4">
-                      <Button variant="outline">Edit Profile</Button>
-                    </div>
+                        <div className="flex justify-end gap-3">
+                          <Button type="button" variant="ghost" onClick={() => setIsEditingProfile(false)}>Cancel</Button>
+                          <Button type="submit">Save Changes</Button>
+                        </div>
+                      </form>
+                    )}
                   </CardContent>
                 </Card>
               </div>
