@@ -166,6 +166,7 @@ export const api = {
             .from('bookings')
             .select('check_in, check_out')
             .eq('property_id', propertyId)
+            .neq('status', 'cancelled') // Ignore cancelled bookings
             // Only future or current bookings matter for availability
             .gte('check_out', new Date().toISOString());
 
@@ -183,6 +184,18 @@ export const api = {
 
         if (error) throw error;
         return data as boolean;
+    },
+
+    async cancelBooking(bookingId: string) {
+        const { data, error } = await supabase
+            .from('bookings')
+            .update({ status: 'cancelled' })
+            .eq('id', bookingId)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
     },
 
     async createBooking(booking: {

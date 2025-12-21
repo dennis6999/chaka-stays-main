@@ -156,6 +156,20 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const handleCancelBooking = async (bookingId: string) => {
+    if (!confirm('Are you sure you want to cancel this booking? This action cannot be undone.')) return;
+
+    try {
+      await api.cancelBooking(bookingId);
+      toast.success('Booking cancelled successfully');
+      // Refresh bookings
+      fetchDashboardData();
+    } catch (error) {
+      console.error('Error cancelling booking:', error);
+      toast.error('Failed to cancel booking');
+    }
+  };
+
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -420,6 +434,16 @@ const Dashboard: React.FC = () => {
                                 {booking.status}
                               </span>
                             </div>
+                            {booking.status !== 'cancelled' && (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                className="h-8"
+                                onClick={() => handleCancelBooking(booking.id)}
+                              >
+                                Cancel
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </CardContent>

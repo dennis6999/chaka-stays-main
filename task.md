@@ -92,3 +92,8 @@
 - [ ] Implement database-level availability check function (`check_availability`)
 - [ ] Update frontend to disable booked dates in calendar
 - [ ] Prevent double-booking submission
+
+## Booking Cancellation
+- [ ] Implement `cancelBooking` function in `api.ts`
+- [ ] Add "Cancel Booking" button to `Dashboard.tsx` (Bookings tab)
+- [ ] Handle cancellation UI updates (optimistic update or refetch)
