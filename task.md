@@ -124,6 +124,8 @@
   - [x] Verify Image Gallery Carousel (Fixed)
   - [x] Verify Mobile Booking Sheet Dates (Fixed)
   - [x] Check Description/Amenities expansion
+- [x] **Global UX Improvements** <!-- id: 63 -->
+  - [x] Implement Scroll-To-Top on route change
 - [x] **Functional Smoke Tests** <!-- id: 61 -->
   - [x] Full Booking Flow (Search -> Select -> Book)
   - [x] Authentication Flow (Login -> Redirect -> Logout)
