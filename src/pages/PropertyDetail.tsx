@@ -487,18 +487,22 @@ const PropertyDetail = () => {
                     You won't be charged yet
                   </div>
 
-                  <div className="flex justify-between text-muted-foreground pt-4 border-t">
-                    <span>KES {property.price_per_night} x 5 nights</span>
-                    <span>KES {property.price_per_night * 5}</span>
-                  </div>
-                  <div className="flex justify-between text-muted-foreground">
-                    <span>Cleaning fee</span>
-                    <span>KES 2,500</span>
-                  </div>
-                  <div className="flex justify-between text-foreground font-bold pt-4 border-t text-lg">
-                    <span>Total before taxes</span>
-                    <span>KES {property.price_per_night * 5 + 2500}</span>
-                  </div>
+                  {checkIn && checkOut && (
+                    <>
+                      <div className="flex justify-between text-muted-foreground pt-4 border-t">
+                        <span>KES {property.price_per_night} x {Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))} nights</span>
+                        <span>KES {(property.price_per_night * Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Cleaning fee</span>
+                        <span>KES 2,500</span>
+                      </div>
+                      <div className="flex justify-between text-foreground font-bold pt-4 border-t text-lg">
+                        <span>Total before taxes</span>
+                        <span>KES {(property.price_per_night * Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24)) + 2500).toLocaleString()}</span>
+                      </div>
+                    </>
+                  )}
 
                 </div>
               </div>
