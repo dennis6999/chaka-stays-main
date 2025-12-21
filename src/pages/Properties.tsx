@@ -171,21 +171,18 @@ const Properties = () => {
           <span className="text-xs text-muted-foreground">(KES)</span>
         </div>
         <Slider
-          defaultValue={[0, 20000]}
+          defaultValue={[20000]}
           max={20000}
-          step={100}
-          value={displayPriceRange}
-          onValueChange={setDisplayPriceRange}
-          onValueCommit={setFilterPriceRange}
+          step={500}
+          value={[displayPriceRange[1]]}
+          onValueChange={(val) => setDisplayPriceRange([0, val[0]])}
+          onValueCommit={(val) => setFilterPriceRange([0, val[0]])}
           className="py-4 cursor-pointer"
         />
         <div className="flex items-center justify-between text-sm font-medium">
+          <span className="text-muted-foreground">upto</span>
           <div className="px-3 py-1 rounded-md bg-neutral/10 text-neutral-600 border border-neutral/20">
-            {displayPriceRange[0]}
-          </div>
-          <span className="text-muted-foreground">-</span>
-          <div className="px-3 py-1 rounded-md bg-neutral/10 text-neutral-600 border border-neutral/20">
-            {displayPriceRange[1]}
+            KES {displayPriceRange[1]}
           </div>
         </div>
       </div>
