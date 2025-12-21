@@ -69,6 +69,8 @@ const PropertyDetail = () => {
   const [isLiked, setIsLiked] = React.useState(false);
   const [isBooking, setIsBooking] = React.useState(false);
   const [showLoginDialog, setShowLoginDialog] = React.useState(false);
+  const [checkInOpen, setCheckInOpen] = React.useState(false);
+  const [checkOutOpen, setCheckOutOpen] = React.useState(false);
   const [reviews, setReviews] = React.useState<Review[]>([]);
 
   const fetchReviews = async () => {
