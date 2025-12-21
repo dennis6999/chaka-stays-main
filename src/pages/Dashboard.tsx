@@ -22,6 +22,9 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
 import { api, Property, Booking } from '../services/api';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 
 const Dashboard: React.FC = () => {
   const { user, loading, logout, refreshUser } = useAuth();
