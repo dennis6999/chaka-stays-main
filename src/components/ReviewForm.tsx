@@ -36,9 +36,9 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ propertyId, userId, onReviewSub
             setComment('');
             setRating(5);
             onReviewSubmitted();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error submitting review:', error);
-            toast.error('Failed to submit review');
+            toast.error(error.message || 'Failed to submit review');
         } finally {
             setIsSubmitting(false);
         }
@@ -62,8 +62,8 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ propertyId, userId, onReviewSub
                         >
                             <Star
                                 className={`w-8 h-8 ${star <= (hoveredRating || rating)
-                                        ? 'fill-yellow-400 text-yellow-400'
-                                        : 'text-muted-foreground'
+                                    ? 'fill-yellow-400 text-yellow-400'
+                                    : 'text-muted-foreground'
                                     }`}
                             />
                         </button>

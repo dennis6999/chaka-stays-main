@@ -296,7 +296,7 @@ const PropertyDetail = () => {
               </div>
 
               {/* Review Form */}
-              {user && user.id !== property.host_id && (
+              {user && user.id !== property.host_id && !reviews.some(r => r.user_id === user?.id) && (
                 <div className="mb-8">
                   <ReviewForm
                     propertyId={property.id}
