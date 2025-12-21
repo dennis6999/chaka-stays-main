@@ -73,7 +73,9 @@ const PropertyDetail = () => {
   const fetchReviews = async () => {
     if (!id) return;
     try {
+      console.log('Fetching reviews for property:', id);
       const data = await api.getReviews(id);
+      console.log('Fetched reviews:', data);
       setReviews(data);
     } catch (error) {
       console.error('Error fetching reviews:', error);
