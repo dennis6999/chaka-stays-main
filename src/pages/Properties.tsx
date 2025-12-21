@@ -5,13 +5,9 @@ import Footer from '@/components/Footer';
 import PropertyCard from '@/components/PropertyCard';
 import SearchForm from '@/components/SearchForm';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import {
   Sheet,
@@ -23,39 +19,85 @@ import {
   SheetFooter,
   SheetClose,
 } from "@/components/ui/sheet";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { api, Property } from '@/services/api';
-import { Loader2, Filter, X, SlidersHorizontal } from 'lucide-react';
+import { Loader2, Filter, SlidersHorizontal, MapPin, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Properties = () => {
-  // State for Filters
-  const [searchParams] = useSearchParams();
-  const [filterPriceRange, setFilterPriceRange] = useState([0, 20000]);
-  const [displayPriceRange, setDisplayPriceRange] = useState([0, 20000]);
-  const [selectedType, setSelectedType] = useState('all');
-  const [guestCount, setGuestCount] = useState('any');
-  const [selectedLocation, setSelectedLocation] = useState('all');
-  const [sortOption, setSortOption] = useState('recommended');
-
-  // Data State
+  const [searchParams, setSearchParams] = useSearchParams();
   const [properties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // --- Filter State ---
+  const [priceRange, setPriceRange] = useState([0, 50000]);
+  const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
+  const [minGuests, setMinGuests] = useState<number>(0);
+  const [sortOption, setSortOption] = useState('recommended');
+
+  const [maxPriceInData, setMaxPriceInData] = useState(20000);
+
+  // --- Derived Data for Filter Options ---
+  const { locations, types, amenities } = useMemo(() => {
+    const locs = new Set<string>();
+    const typs = new Set<string>();
+    const amens = new Set<string>();
+    let maxP = 0;
+
+    properties.forEach(p => {
+      if (p.location) locs.add(p.location);
+      if (p.property_type) typs.add(p.property_type);
+      if (p.price_per_night > maxP) maxP = p.price_per_night;
+      p.amenities?.forEach(a => amens.add(a));
+    });
+
+    return {
+      locations: Array.from(locs).sort(),
+      types: Array.from(typs).sort(),
+      amenities: Array.from(amens).sort().slice(0, 10), // Limit to top 10 for UI for now
+      maxPrice: Math.ceil(maxP / 1000) * 1000 || 20000 // Round up to nearest 1000
+    };
+  }, [properties]);
+
+  useEffect(() => {
+    if (locations.maxPrice > 0 && maxPriceInData !== locations.maxPrice) {
+      setMaxPriceInData(locations.maxPrice);
+      // Only set default if user hasn't messed with it? 
+      // Actually, standard practice is to initialize with full range
+      // setPriceRange([0, locations.maxPrice]); 
+    }
+  }, [locations.maxPrice]);
+
+
   useEffect(() => {
     fetchProperties();
+  }, []);
 
-    // Initialize from URL params
+  // Initialize filters from URL
+  useEffect(() => {
     const locParam = searchParams.get('location');
     const guestsParam = searchParams.get('guests');
 
-    if (locParam) setSelectedLocation(locParam.toLowerCase());
-
+    if (locParam && locParam !== 'all') {
+      // Try to fuzzy match location from existing properties if possible, or just add it
+      setSelectedLocations([locParam]);
+    }
     if (guestsParam) {
-      const g = parseInt(guestsParam);
-      if (g >= 7) setGuestCount('7+');
-      else if (g >= 5) setGuestCount('5-6');
-      else if (g >= 3) setGuestCount('3-4');
-      else if (g >= 1) setGuestCount('1-2');
+      setMinGuests(parseInt(guestsParam) || 0);
     }
   }, [searchParams]);
 
@@ -71,304 +113,347 @@ const Properties = () => {
     }
   };
 
-  // Filtering and Sorting Logic
-  const filteredAndSortedProperties = useMemo(() => {
-    let result = [...properties];
+  // --- Filtering Logic (Realtime) ---
+  const filteredProperties = useMemo(() => {
+    return properties.filter(p => {
+      // 1. Price
+      if (p.price_per_night < priceRange[0] || p.price_per_night > priceRange[1]) return false;
 
-    // 0. Filter by Location
-    if (selectedLocation !== 'all') {
-      // Simple substring match for demo (e.g. "chaka" matches "Chaka Town")
-      result = result.filter(p => p.location && p.location.toLowerCase().includes(selectedLocation));
+      // 2. Locations (Multi-select OR user search text)
+      if (selectedLocations.length > 0) {
+        // Check if any selected location matches the property location (substring match for flexibility)
+        // If user searched "Chaka", and property is "Chaka Town", it should match.
+        const matchesLocation = selectedLocations.some(loc =>
+          p.location.toLowerCase().includes(loc.toLowerCase())
+        );
+        if (!matchesLocation) return false;
+      }
+
+      // 3. Type (Multi-select)
+      if (selectedTypes.length > 0) {
+        if (!p.property_type || !selectedTypes.includes(p.property_type)) return false;
+      }
+
+      // 4. Amenities (Multi-select AND - must have ALL selected)
+      if (selectedAmenities.length > 0) {
+        const hasAllAmenities = selectedAmenities.every(amenity =>
+          p.amenities?.includes(amenity)
+        );
+        if (!hasAllAmenities) return false;
+      }
+
+      // 5. Guests
+      if (p.max_guests < minGuests) return false;
+
+      return true;
+    }).sort((a, b) => {
+      switch (sortOption) {
+        case 'price-low': return a.price_per_night - b.price_per_night;
+        case 'price-high': return b.price_per_night - a.price_per_night;
+        case 'rating': return b.rating - a.rating;
+        default: return 0;
+      }
+    });
+  }, [properties, priceRange, selectedLocations, selectedTypes, selectedAmenities, minGuests, sortOption]);
+
+  // --- Handlers ---
+
+  const toggleFilter = (
+    currentList: string[],
+    setList: React.Dispatch<React.SetStateAction<string[]>>,
+    item: string
+  ) => {
+    if (currentList.includes(item)) {
+      setList(currentList.filter(i => i !== item));
+    } else {
+      setList([...currentList, item]);
     }
-
-    // 1. Filter by Type
-    if (selectedType !== 'all') {
-      result = result.filter(
-        (p) => p.property_type && p.property_type.toLowerCase() === selectedType.toLowerCase()
-      );
-    }
-
-    // 2. Filter by Price
-    result = result.filter(
-      (p) => p.price_per_night >= filterPriceRange[0] && p.price_per_night <= filterPriceRange[1]
-    );
-
-    // 3. Filter by Guests
-    if (guestCount !== 'any') {
-      const minGuests = parseInt(guestCount.split('-')[0] || guestCount.replace('+', ''));
-      result = result.filter((p) => p.max_guests >= minGuests);
-    }
-
-    // 4. Sorting
-    switch (sortOption) {
-      case 'price-low':
-        result.sort((a, b) => a.price_per_night - b.price_per_night);
-        break;
-      case 'price-high':
-        result.sort((a, b) => b.price_per_night - a.price_per_night);
-        break;
-      case 'rating':
-        result.sort((a, b) => b.rating - a.rating);
-        break;
-      case 'recommended':
-      default:
-        break;
-    }
-
-    return result;
-  }, [properties, selectedType, filterPriceRange, guestCount, sortOption, selectedLocation]);
-
-  const clearFilters = () => {
-    setFilterPriceRange([0, 20000]);
-    setDisplayPriceRange([0, 20000]);
-    setSelectedType('all');
-    setGuestCount('any');
-    setSelectedLocation('all');
-    setSortOption('recommended');
-    toast.info('Filters cleared');
   };
 
-  // Reusable Filter Content
-  const FilterContent = ({ isMobile = false }) => (
-    <div className={`space-y-8 ${isMobile ? 'mt-6' : ''}`}>
+  const clearAllFilters = () => {
+    setPriceRange([0, maxPriceInData]);
+    setSelectedLocations([]);
+    setSelectedTypes([]);
+    setSelectedAmenities([]);
+    setMinGuests(0);
+    setSortOption('recommended');
+    toast.info("Filters cleared");
+  };
 
-      {/* Location Filter */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-medium text-foreground/80">Location</h3>
-        <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select location" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Any Location</SelectItem>
-            <SelectItem value="chaka">Chaka Town</SelectItem>
-            <SelectItem value="nyeri">Nyeri</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+  // --- Counts for UI ---
+  const getCount = (key: string, value: string) => {
+    // Calculate how many properties WOULD remain if this filter was applied
+    // This is simple "current count matching this criteria globally"
+    // or "current count within OTHER active filters"? 
+    // Industry standard: typically shows global count or count within current context.
+    // Let's do Global count for simplicity and speed first.
+    if (key === 'type') return properties.filter(p => p.property_type === value).length;
+    if (key === 'location') return properties.filter(p => p.location === value).length;
+    if (key === 'amenity') return properties.filter(p => p.amenities?.includes(value)).length;
+    return 0;
+  };
 
-      {/* Property Type Filter */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-medium text-foreground/80">Property Type</h3>
-        <Select value={selectedType} onValueChange={setSelectedType}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="apartment">Apartment</SelectItem>
-            <SelectItem value="home">Home</SelectItem>
-            <SelectItem value="cottage">Cottage</SelectItem>
-            <SelectItem value="room">Room</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
 
-      {/* Price Range Filter */}
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <h3 className="text-sm font-medium text-foreground/80">Price Range</h3>
-          <span className="text-xs text-muted-foreground">(KES)</span>
-        </div>
+  const FilterSidebar = ({ isMobile = false }) => (
+    <div className={`space-y-6 ${isMobile ? 'pb-20' : ''}`}>
+
+      {/* Price Range */}
+      <div>
+        <h3 className="text-sm font-semibold mb-4">Price Range</h3>
         <Slider
-          defaultValue={[20000]}
-          max={20000}
+          defaultValue={[0, maxPriceInData]}
+          max={maxPriceInData}
           step={500}
-          value={[displayPriceRange[1]]}
-          onValueChange={(val) => setDisplayPriceRange([0, val[0]])}
-          onValueCommit={(val) => setFilterPriceRange([0, val[0]])}
-          className="py-4 cursor-pointer"
+          value={priceRange}
+          onValueChange={setPriceRange} // Realtime update
+          className="my-6"
         />
-        <div className="flex items-center justify-between text-sm font-medium">
-          <span className="text-muted-foreground">upto</span>
-          <div className="px-3 py-1 rounded-md bg-neutral/10 text-neutral-600 border border-neutral/20">
-            KES {displayPriceRange[1]}
-          </div>
+        <div className="flex items-center justify-between text-sm">
+          <div className="border px-2 py-1 rounded bg-background">KES {priceRange[0]}</div>
+          <div className="text-muted-foreground">-</div>
+          <div className="border px-2 py-1 rounded bg-background">KES {priceRange[1]}</div>
         </div>
       </div>
 
-      {/* Guest Count Filter */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-medium text-foreground/80">Guest Count</h3>
-        <Select value={guestCount} onValueChange={setGuestCount}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select guests" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="any">Any Guests</SelectItem>
-            <SelectItem value="1-2">1-2 Guests</SelectItem>
-            <SelectItem value="3-4">3-4 Guests</SelectItem>
-            <SelectItem value="5-6">5-6 Guests</SelectItem>
-            <SelectItem value="7+">7+ Guests</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <div className="h-px bg-border" />
 
+      {/* Property Type */}
+      <Accordion type="single" collapsible defaultValue="types">
+        <AccordionItem value="types" className="border-none">
+          <AccordionTrigger className="py-2 hover:no-underline text-sm font-semibold">Property Type</AccordionTrigger>
+          <AccordionContent>
+            <div className="space-y-3 pt-2">
+              {types.map(type => (
+                <div key={type} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`type-${type}`}
+                    checked={selectedTypes.includes(type)}
+                    onCheckedChange={() => toggleFilter(selectedTypes, setSelectedTypes, type)}
+                  />
+                  <Label htmlFor={`type-${type}`} className="text-sm font-normal flex-1 cursor-pointer flex justify-between">
+                    <span>{type}</span>
+                    <span className="text-muted-foreground text-xs">({getCount('type', type)})</span>
+                  </Label>
+                </div>
+              ))}
+              {types.length === 0 && <p className="text-xs text-muted-foreground">No types found</p>}
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+
+      <div className="h-px bg-border" />
+
+      {/* Amenities */}
+      <Accordion type="single" collapsible defaultValue="amenities">
+        <AccordionItem value="amenities" className="border-none">
+          <AccordionTrigger className="py-2 hover:no-underline text-sm font-semibold">Amenities</AccordionTrigger>
+          <AccordionContent>
+            <div className="space-y-3 pt-2">
+              {amenities.map(amenity => (
+                <div key={amenity} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`amenity-${amenity}`}
+                    checked={selectedAmenities.includes(amenity)}
+                    onCheckedChange={() => toggleFilter(selectedAmenities, setSelectedAmenities, amenity)}
+                  />
+                  <Label htmlFor={`amenity-${amenity}`} className="text-sm font-normal flex-1 cursor-pointer flex justify-between">
+                    <span>{amenity}</span>
+                    <span className="text-muted-foreground text-xs">({getCount('amenity', amenity)})</span>
+                  </Label>
+                </div>
+              ))}
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+
+      <div className="h-px bg-border" />
+
+      {/* Guest Count */}
+      <div>
+        <h3 className="text-sm font-semibold mb-3">Guests</h3>
+        <div className="flex flex-wrap gap-2">
+          {[1, 2, 3, 4, 5, 6].map(num => (
+            <Button
+              key={num}
+              variant={minGuests === num ? "default" : "outline"}
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={() => setMinGuests(minGuests === num ? 0 : num)}
+            >
+              {num}+
+            </Button>
+          ))}
+        </div>
+      </div>
 
     </div>
   );
 
   return (
-    <div className="min-h-screen flex flex-col bg-neutral/30">
+    <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
-      <main className="flex-grow pb-24">
-        {/* Header Section */}
-        {/* Header Section */}
-        <div className="relative py-16 md:py-24 overflow-hidden min-h-[400px] flex flex-col justify-center">
-          {/* Background Image */}
-          <div className="absolute inset-0 z-0">
-            <img
-              src="https://images.unsplash.com/photo-1449156493391-d2cfa28e468b?q=80&w=2072&auto=format&fit=crop"
-              alt="Background"
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-black/40" />
-          </div>
-          <div className="chaka-container relative z-10 text-center md:text-left">
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold text-white mb-6 leading-tight tracking-tight">
-              Find Your Perfect <br className="hidden md:block" /> Stay in Chaka Town
-            </h1>
-            <div className="bg-white/95 backdrop-blur-md p-2 rounded-2xl shadow-2xl max-w-4xl mx-auto md:mx-0">
-              <SearchForm />
-            </div>
-          </div>
+
+      {/* Hero / Header */}
+      <div className="bg-neutral-900 text-white py-12 md:py-20 relative overflow-hidden">
+        <div className="absolute inset-0 z-0 opacity-40">
+          <img src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?q=80&w=2070" className="w-full h-full object-cover" />
         </div>
+        <div className="chaka-container relative z-10">
+          <h1 className="text-3xl md:text-5xl font-serif font-bold mb-4">Explore Our Stays</h1>
+          <p className="text-lg text-neutral-300 max-w-2xl">
+            Discover handpicked homes, cabins, and apartments for your next adventure in Chaka Town.
+          </p>
+        </div>
+      </div>
 
-        <div className="chaka-container mt-8 md:mt-12">
-          {/* Mobile Filter & Sort Bar */}
-          <div className="lg:hidden flex gap-4 mb-6 sticky top-20 z-30 pt-4 pb-2 bg-neutral/30 backdrop-blur-lg -mx-6 px-6 border-b border-neutral/10">
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" className="flex-1 bg-white/80 backdrop-blur-sm border-primary/20 hover:bg-white hover:border-primary">
-                  <SlidersHorizontal className="w-4 h-4 mr-2" />
-                  Filters
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-[85vw] sm:w-[380px] overflow-y-auto">
-                <SheetHeader>
-                  <SheetTitle className="text-2xl font-serif text-left">Filters</SheetTitle>
-                  <SheetDescription className="text-left">
-                    Refine your search to find the perfect stay.
-                  </SheetDescription>
-                </SheetHeader>
-                <FilterContent isMobile={true} />
-                <SheetFooter className="mt-8 border-t pt-4">
-                  <SheetClose asChild>
-                    <Button type="submit" className="w-full">Show {filteredAndSortedProperties.length} Properties</Button>
-                  </SheetClose>
-                </SheetFooter>
-              </SheetContent>
-            </Sheet>
+      <div className="chaka-container py-8 flex-grow">
+        <div className="flex flex-col lg:flex-row gap-8">
 
-            <Select value={sortOption} onValueChange={setSortOption}>
-              <SelectTrigger className="flex-1 bg-white/80 backdrop-blur-sm border-primary/20">
-                <SelectValue placeholder="Sort" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="recommended">Recommended</SelectItem>
-                <SelectItem value="price-low">Price: Low to High</SelectItem>
-                <SelectItem value="price-high">Price: High to Low</SelectItem>
-                <SelectItem value="rating">Top Rated</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex flex-col lg:flex-row gap-8 items-start">
-            {/* Desktop Filters Sidebar - Sticky */}
-            <aside className="hidden lg:block lg:w-1/4 sticky top-24 transition-all duration-300 z-10">
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-border/50">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-serif font-semibold flex items-center">
-                    <Filter className="h-5 w-5 mr-2 text-primary" /> Filters
-                  </h2>
-                  {(selectedLocation !== 'all' || selectedType !== 'all' || guestCount !== 'any' || filterPriceRange[0] > 0 || filterPriceRange[1] < 20000) && (
-                    <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 px-2 text-xs text-muted-foreground hover:text-destructive">
-                      Clear all
-                    </Button>
-                  )}
-                </div>
-                <FilterContent />
-              </div>
-            </aside>
-
-            {/* Properties Grid */}
-            <div className="w-full lg:w-3/4">
-              {/* Desktop Toolbar */}
-              <div className="hidden lg:flex justify-between items-center mb-6 gap-4 bg-white/50 p-4 rounded-xl border border-border/50 backdrop-blur-sm">
-                <h2 className="text-lg font-medium text-muted-foreground">
-                  Showing <span className="text-foreground font-bold">{filteredAndSortedProperties.length}</span> properties
+          {/* Desktop Sidebar */}
+          <aside className="hidden lg:block w-72 flex-shrink-0">
+            <div className="sticky top-24">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-bold flex items-center gap-2">
+                  <Filter className="w-4 h-4" /> Filters
                 </h2>
+                <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-xs h-auto py-1 px-2">
+                  Reset
+                </Button>
+              </div>
+              <FilterSidebar />
+            </div>
+          </aside>
 
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-muted-foreground whitespace-nowrap">Sort by:</span>
-                  <Select value={sortOption} onValueChange={setSortOption}>
-                    <SelectTrigger className="w-[200px] bg-white">
-                      <SelectValue placeholder="Sort by" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="recommended">Recommended</SelectItem>
-                      <SelectItem value="price-low">Price: Low to High</SelectItem>
-                      <SelectItem value="price-high">Price: High to Low</SelectItem>
-                      <SelectItem value="rating">Top Rated</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+          {/* Main Content */}
+          <div className="flex-1">
+            {/* Mobile Filter Bar & Sort */}
+            <div className="flex flex-col sm:flex-row gap-4 mb-6 items-start sm:items-center justify-between sticky top-20 z-30 lg:static bg-background/95 backdrop-blur py-2 lg:py-0 lg:bg-transparent">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                {/* Mobile Filter Sheet */}
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" className="lg:hidden flex-1 sm:flex-none">
+                      <SlidersHorizontal className="w-4 h-4 mr-2" /> Filters
+                      {(selectedTypes.length > 0 || selectedAmenities.length > 0) && (
+                        <Badge variant="secondary" className="ml-2 h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px]">
+                          {selectedTypes.length + selectedAmenities.length}
+                        </Badge>
+                      )}
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="w-full sm:w-[400px] overflow-y-auto">
+                    <SheetHeader>
+                      <SheetTitle>Filters</SheetTitle>
+                      <SheetDescription>Find the perfect place according to your needs.</SheetDescription>
+                    </SheetHeader>
+                    <div className="mt-8">
+                      <FilterSidebar isMobile />
+                    </div>
+                    <SheetFooter className="absolute bottom-0 left-0 right-0 p-4 border-t bg-background">
+                      <div className="flex gap-2 w-full">
+                        <Button variant="outline" className="flex-1" onClick={clearAllFilters}>Clear</Button>
+                        <SheetClose asChild>
+                          <Button className="flex-1">Show properties</Button>
+                        </SheetClose>
+                      </div>
+                    </SheetFooter>
+                  </SheetContent>
+                </Sheet>
+
+                <p className="hidden sm:block text-sm text-muted-foreground">
+                  {filteredProperties.length} {filteredProperties.length === 1 ? 'result' : 'results'}
+                </p>
               </div>
 
-              {isLoading ? (
-                <div className="flex flex-col items-center justify-center py-20">
-                  <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
-                  <p className="text-muted-foreground animate-pulse">Finding the best stays for you...</p>
-                </div>
-              ) : (
-                <>
-                  {filteredAndSortedProperties.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-dashed border-border text-center px-4">
-                      <div className="h-16 w-16 bg-neutral/10 rounded-full flex items-center justify-center mb-4 text-muted-foreground">
-                        <Filter className="h-8 w-8" />
-                      </div>
-                      <h3 className="text-xl font-semibold mb-2">No properties matches your filters</h3>
-                      <p className="text-muted-foreground max-w-md mb-6">
-                        Try adjusting your search criteria. Removing some filters usually helps!
-                      </p>
-                      <Button variant="outline" onClick={clearFilters}>
-                        Clear all filters
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in pb-10">
-                      {filteredAndSortedProperties.map((property) => (
-                        <div key={property.id} className="transform hover:-translate-y-1 transition-transform duration-300">
-                          <PropertyCard
-                            {...property}
-                            name={property.title}
-                            image={property.images?.[0] || 'https://via.placeholder.com/300'}
-                            type={property.property_type || 'Stay'}
-                            guests={property.max_guests}
-                            price={property.price_per_night}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-
-              {filteredAndSortedProperties.length > 9 && (
-                <div className="mt-8 flex justify-center">
-                  <div className="inline-flex items-center justify-center gap-2 bg-white/80 backdrop-blur-md p-1 rounded-lg border shadow-sm">
-                    <Button variant="ghost" className="h-9 w-9 p-0" disabled>&larr;</Button>
-                    <Button variant="secondary" className="h-9 w-9 p-0 font-medium">1</Button>
-                    <Button variant="ghost" className="h-9 w-9 p-0">2</Button>
-                    <Button variant="ghost" className="h-9 w-9 p-0">3</Button>
-                    <Button variant="ghost" className="h-9 w-9 p-0">&rarr;</Button>
-                  </div>
-                </div>
-              )}
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-between">
+                <p className="sm:hidden text-sm text-muted-foreground">
+                  {filteredProperties.length} results
+                </p>
+                <Select value={sortOption} onValueChange={setSortOption}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="recommended">Recommended</SelectItem>
+                    <SelectItem value="price-low">Price: Low to High</SelectItem>
+                    <SelectItem value="price-high">Price: High to Low</SelectItem>
+                    <SelectItem value="rating">Top Rated</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+
+            {/* Active Filters Display (Chips) */}
+            {(selectedTypes.length > 0 || selectedAmenities.length > 0 || selectedLocations.length > 0 || minGuests > 0) && (
+              <div className="flex flex-wrap gap-2 mb-6 animate-in fade-in slide-in-from-top-2">
+                {selectedLocations.map(loc => (
+                  <Badge key={loc} variant="secondary" className="px-3 py-1 text-sm bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+                    <MapPin className="w-3 h-3 mr-1" /> {loc}
+                    <X className="w-3 h-3 ml-1 cursor-pointer hover:text-foreground" onClick={() => toggleFilter(selectedLocations, setSelectedLocations, loc)} />
+                  </Badge>
+                ))}
+                {selectedTypes.map(type => (
+                  <Badge key={type} variant="secondary" className="px-3 py-1 text-sm">
+                    {type}
+                    <X className="w-3 h-3 ml-1 cursor-pointer hover:text-foreground" onClick={() => toggleFilter(selectedTypes, setSelectedTypes, type)} />
+                  </Badge>
+                ))}
+                {selectedAmenities.map(amenity => (
+                  <Badge key={amenity} variant="outline" className="px-3 py-1 text-sm">
+                    {amenity}
+                    <X className="w-3 h-3 ml-1 cursor-pointer hover:text-foreground" onClick={() => toggleFilter(selectedAmenities, setSelectedAmenities, amenity)} />
+                  </Badge>
+                ))}
+                {minGuests > 0 && (
+                  <Badge variant="outline" className="px-3 py-1 text-sm">
+                    {minGuests}+ Guests
+                    <X className="w-3 h-3 ml-1 cursor-pointer hover:text-foreground" onClick={() => setMinGuests(0)} />
+                  </Badge>
+                )}
+                <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-xs h-7">Clear all</Button>
+              </div>
+            )}
+
+
+            {/* Grid */}
+            {isLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="h-[400px] rounded-xl bg-neutral/10 animate-pulse" />
+                ))}
+              </div>
+            ) : filteredProperties.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
+                {filteredProperties.map((property) => (
+                  <PropertyCard
+                    key={property.id}
+                    {...property}
+                    name={property.title}
+                    image={property.images?.[0] || 'https://via.placeholder.com/300'}
+                    type={property.property_type || 'Stay'}
+                    guests={property.max_guests}
+                    price={property.price_per_night}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-20 text-center border-2 border-dashed border-border rounded-xl">
+                <div className="h-16 w-16 bg-neutral/10 rounded-full flex items-center justify-center mb-4 text-muted-foreground">
+                  <Filter className="h-8 w-8" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">No matches found</h3>
+                <p className="text-muted-foreground mb-6 max-w-md">
+                  We couldn't find any properties that match your current filters.
+                  Try adjusting the price range or removing some filters.
+                </p>
+                <Button onClick={clearAllFilters}>Clear all filters</Button>
+              </div>
+            )}
           </div>
         </div>
-      </main>
+      </div>
       <Footer />
     </div>
   );
