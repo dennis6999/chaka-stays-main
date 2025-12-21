@@ -128,14 +128,8 @@ const PropertyDetail = () => {
   React.useEffect(() => {
     const loadProperty = async () => {
       try {
-        console.log('PropertyDetail: Loading property...', { id });
-        if (!id) {
-          console.error('PropertyDetail: No ID provided');
-          return;
-        }
+        if (!id) return;
         const data = await api.getProperty(id);
-        console.log('PropertyDetail: Loaded data', data);
-        if (!data) console.error('PropertyDetail: Data is null');
         setProperty(data);
       } catch (error) {
         console.error('Error fetching property:', error);
@@ -230,7 +224,6 @@ const PropertyDetail = () => {
     return (
       <div className="min-h-screen flex items-center justify-center flex-col gap-4">
         <h2 className="text-2xl font-bold">Property not found</h2>
-        <p className="text-muted-foreground font-mono bg-muted p-2 rounded">Debug ID: {id || 'undefined'}</p>
         <Button onClick={() => navigate('/')}>Return Home</Button>
       </div>
     );
@@ -294,8 +287,8 @@ const PropertyDetail = () => {
           </div>
 
           {/* Mobile Image Carousel */}
-          <div className="lg:hidden mb-8 -mx-4 sm:mx-0">
-            <Carousel className="w-full">
+          <div className="lg:hidden mb-8 -mx-4 sm:mx-0 relative">
+            <Carousel className="w-full" setApi={setCarouselApi}>
               <CarouselContent>
                 {property.images.map((image, index) => (
                   <CarouselItem key={index}>
@@ -313,12 +306,22 @@ const PropertyDetail = () => {
                   </CarouselItem>
                 ))}
               </CarouselContent>
-              {property.images.length > 1 && (
-                <div className="absolute bottom-4 right-4 bg-black/60 text-white text-xs px-2 py-1 rounded-md pointer-events-none">
-                  1 / {property.images.length}
-                </div>
-              )}
             </Carousel>
+
+            {/* Custom Pagination Dots for Mobile Inline Carousel */}
+            <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-1.5 z-10">
+              {property.images.slice(0, 5).map((_, idx) => (
+                <div
+                  key={idx}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${activeImage === idx ? 'w-4 bg-white' : 'w-1.5 bg-white/50'}`}
+                />
+              ))}
+              {property.images.length > 5 && <div className={`h-1.5 w-1.5 rounded-full bg-white/50`} />}
+            </div>
+
+            <div className="absolute bottom-4 right-4 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full font-medium pointer-events-none">
+              {activeImage + 1} / {property.images.length}
+            </div>
           </div>
 
           {/* Desktop Image Grid */}
