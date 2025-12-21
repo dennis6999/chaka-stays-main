@@ -38,6 +38,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Sheet,
   SheetClose,
@@ -326,11 +327,12 @@ const PropertyDetail = () => {
 
               {/* Host Info */}
               <div className="flex items-center gap-4 py-4 border-b border-border">
-                <img
-                  src={property.host?.avatar_url || "https://randomuser.me/api/portraits/lego/1.jpg"}
-                  alt={property.host?.full_name}
-                  className="w-14 h-14 rounded-full object-cover"
-                />
+                <Avatar className="h-14 w-14 border border-border">
+                  <AvatarImage src={property.host?.avatar_url} className="object-cover" />
+                  <AvatarFallback className="bg-primary/10 text-primary font-medium text-lg">
+                    {property.host?.full_name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'HO'}
+                  </AvatarFallback>
+                </Avatar>
                 <div>
                   <div className="font-semibold text-lg">Hosted by {property.host?.full_name || 'Host'}</div>
                   <div className="text-sm text-muted-foreground">Joined {new Date(property.created_at).getFullYear()}</div>
