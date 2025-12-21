@@ -3,7 +3,6 @@ import { useSearchParams } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import PropertyCard from '@/components/PropertyCard';
-import SearchForm from '@/components/SearchForm';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -43,6 +42,7 @@ const Properties = () => {
 
   // --- Filter State ---
   const [priceRange, setPriceRange] = useState([0, 50000]);
+  const [displayPriceRange, setDisplayPriceRange] = useState([0, 50000]);
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
@@ -52,7 +52,7 @@ const Properties = () => {
   const [maxPriceInData, setMaxPriceInData] = useState(20000);
 
   // --- Derived Data for Filter Options ---
-  const { locations, types, amenities } = useMemo(() => {
+  const { locations, types, amenities, maxPrice } = useMemo(() => {
     const locs = new Set<string>();
     const typs = new Set<string>();
     const amens = new Set<string>();
@@ -74,13 +74,12 @@ const Properties = () => {
   }, [properties]);
 
   useEffect(() => {
-    if (locations.maxPrice > 0 && maxPriceInData !== locations.maxPrice) {
-      setMaxPriceInData(locations.maxPrice);
-      // Only set default if user hasn't messed with it? 
-      // Actually, standard practice is to initialize with full range
-      // setPriceRange([0, locations.maxPrice]); 
+    if (maxPrice > 0 && maxPriceInData !== maxPrice) {
+      setMaxPriceInData(maxPrice);
+      setPriceRange([0, maxPrice]);
+      setDisplayPriceRange([0, maxPrice]);
     }
-  }, [locations.maxPrice]);
+  }, [maxPrice]);
 
 
   useEffect(() => {
@@ -172,6 +171,7 @@ const Properties = () => {
 
   const clearAllFilters = () => {
     setPriceRange([0, maxPriceInData]);
+    setDisplayPriceRange([0, maxPriceInData]);
     setSelectedLocations([]);
     setSelectedTypes([]);
     setSelectedAmenities([]);
@@ -204,14 +204,15 @@ const Properties = () => {
           defaultValue={[0, maxPriceInData]}
           max={maxPriceInData}
           step={500}
-          value={priceRange}
-          onValueChange={setPriceRange} // Realtime update
+          value={displayPriceRange}
+          onValueChange={setDisplayPriceRange}
+          onValueCommit={setPriceRange} // Commit changes on drag end
           className="my-6"
         />
         <div className="flex items-center justify-between text-sm">
-          <div className="border px-2 py-1 rounded bg-background">KES {priceRange[0]}</div>
+          <div className="border px-2 py-1 rounded bg-background">KES {displayPriceRange[0]}</div>
           <div className="text-muted-foreground">-</div>
-          <div className="border px-2 py-1 rounded bg-background">KES {priceRange[1]}</div>
+          <div className="border px-2 py-1 rounded bg-background">KES {displayPriceRange[1]}</div>
         </div>
       </div>
 
