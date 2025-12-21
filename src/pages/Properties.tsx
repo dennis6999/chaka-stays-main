@@ -42,7 +42,7 @@ const Properties = () => {
 
   // --- Filter State ---
   const [priceRange, setPriceRange] = useState([0, 50000]);
-  const [displayPriceRange, setDisplayPriceRange] = useState([0, 50000]);
+  // Removed displayPriceRange to ensure single source of truth for realtime sync
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
@@ -171,7 +171,6 @@ const Properties = () => {
 
   const clearAllFilters = () => {
     setPriceRange([0, maxPriceInData]);
-    setDisplayPriceRange([0, maxPriceInData]);
     setSelectedLocations([]);
     setSelectedTypes([]);
     setSelectedAmenities([]);
