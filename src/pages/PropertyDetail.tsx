@@ -711,7 +711,6 @@ const PropertyDetail = () => {
           </div>
 
           {/* Mobile Fixed Bottom Bar */}
-          {/* Mobile Fixed Bottom Bar */}
           <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border z-40 flex items-center justify-between safe-area-bottom shadow-[0_-5px_10px_rgba(0,0,0,0.05)]">
             <Sheet>
               <SheetTrigger asChild>
@@ -737,7 +736,7 @@ const PropertyDetail = () => {
                     <div className="space-y-3">
                       <Label className="text-base font-semibold">Check-in Date</Label>
                       <div className="border rounded-lg p-2 bg-card flex justify-center">
-                        <Calendar mode="single" selected={checkIn} onSelect={setCheckIn} className="rounded-md" initialFocus />
+                        <Calendar mode="single" selected={checkIn} onSelect={setCheckIn} className="rounded-md" />
                       </div>
                     </div>
                     <div className="space-y-3">
