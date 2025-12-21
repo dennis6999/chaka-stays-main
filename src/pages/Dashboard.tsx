@@ -7,6 +7,16 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2, Calendar, Home, User, Plus, Edit, Trash, MapPin } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -47,6 +57,10 @@ const Dashboard: React.FC = () => {
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  // Cancellation Dialog State
+  const [bookingToCancel, setBookingToCancel] = useState<string | null>(null);
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
 
   useEffect(() => {
     if (loading) return;
@@ -156,17 +170,24 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const handleCancelBooking = async (bookingId: string) => {
-    if (!confirm('Are you sure you want to cancel this booking? This action cannot be undone.')) return;
+  const handleCancelClick = (bookingId: string) => {
+    setBookingToCancel(bookingId);
+    setIsCancelDialogOpen(true);
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!bookingToCancel) return;
 
     try {
-      await api.cancelBooking(bookingId);
+      await api.cancelBooking(bookingToCancel);
       toast.success('Booking cancelled successfully');
-      // Refresh bookings
       fetchDashboardData();
     } catch (error) {
       console.error('Error cancelling booking:', error);
       toast.error('Failed to cancel booking');
+    } finally {
+      setIsCancelDialogOpen(false);
+      setBookingToCancel(null);
     }
   };
 
@@ -439,7 +460,7 @@ const Dashboard: React.FC = () => {
                                 variant="destructive"
                                 size="sm"
                                 className="h-8"
-                                onClick={() => handleCancelBooking(booking.id)}
+                                onClick={() => handleCancelClick(booking.id)}
                               >
                                 Cancel
                               </Button>
@@ -805,6 +826,23 @@ const Dashboard: React.FC = () => {
         </div>
       </main>
       <Footer />
+
+      <AlertDialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Booking?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel this booking? This action cannot be undone, and the dates will be made available for other guests.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep Booking</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmCancel} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Yes, Cancel It
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
