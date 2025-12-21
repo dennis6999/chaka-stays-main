@@ -30,7 +30,8 @@ import { toast } from 'sonner';
 const Properties = () => {
   // State for Filters
   const [searchParams] = useSearchParams();
-  const [priceRange, setPriceRange] = useState([0, 20000]);
+  const [filterPriceRange, setFilterPriceRange] = useState([0, 20000]);
+  const [displayPriceRange, setDisplayPriceRange] = useState([0, 20000]);
   const [selectedType, setSelectedType] = useState('all');
   const [guestCount, setGuestCount] = useState('any');
   const [selectedLocation, setSelectedLocation] = useState('all');
@@ -89,7 +90,7 @@ const Properties = () => {
 
     // 2. Filter by Price
     result = result.filter(
-      (p) => p.price_per_night >= priceRange[0] && p.price_per_night <= priceRange[1]
+      (p) => p.price_per_night >= filterPriceRange[0] && p.price_per_night <= filterPriceRange[1]
     );
 
     // 3. Filter by Guests
@@ -115,10 +116,11 @@ const Properties = () => {
     }
 
     return result;
-  }, [properties, selectedType, priceRange, guestCount, sortOption, selectedLocation]);
+  }, [properties, selectedType, filterPriceRange, guestCount, sortOption, selectedLocation]);
 
   const clearFilters = () => {
-    setPriceRange([0, 20000]);
+    setFilterPriceRange([0, 20000]);
+    setDisplayPriceRange([0, 20000]);
     setSelectedType('all');
     setGuestCount('any');
     setSelectedLocation('all');
@@ -172,17 +174,18 @@ const Properties = () => {
           defaultValue={[0, 20000]}
           max={20000}
           step={100}
-          value={priceRange}
-          onValueChange={setPriceRange}
-          className="py-4"
+          value={displayPriceRange}
+          onValueChange={setDisplayPriceRange}
+          onValueCommit={setFilterPriceRange}
+          className="py-4 cursor-pointer"
         />
         <div className="flex items-center justify-between text-sm font-medium">
           <div className="px-3 py-1 rounded-md bg-neutral/10 text-neutral-600 border border-neutral/20">
-            {priceRange[0]}
+            {displayPriceRange[0]}
           </div>
           <span className="text-muted-foreground">-</span>
           <div className="px-3 py-1 rounded-md bg-neutral/10 text-neutral-600 border border-neutral/20">
-            {priceRange[1]}
+            {displayPriceRange[1]}
           </div>
         </div>
       </div>
@@ -272,7 +275,7 @@ const Properties = () => {
                   <h2 className="text-xl font-serif font-semibold flex items-center">
                     <Filter className="h-5 w-5 mr-2 text-primary" /> Filters
                   </h2>
-                  {(selectedLocation !== 'all' || selectedType !== 'all' || guestCount !== 'any' || priceRange[0] > 0 || priceRange[1] < 20000) && (
+                  {(selectedLocation !== 'all' || selectedType !== 'all' || guestCount !== 'any' || filterPriceRange[0] > 0 || filterPriceRange[1] < 20000) && (
                     <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 px-2 text-xs text-muted-foreground hover:text-destructive">
                       Clear all
                     </Button>
