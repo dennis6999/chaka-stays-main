@@ -78,6 +78,7 @@ const PropertyDetail = () => {
   const [showLoginDialog, setShowLoginDialog] = React.useState(false);
   const [checkInOpen, setCheckInOpen] = React.useState(false);
   const [checkOutOpen, setCheckOutOpen] = React.useState(false);
+  const [mobileBookingOpen, setMobileBookingOpen] = React.useState(false);
   const [reviews, setReviews] = React.useState<Review[]>([]);
   const [disabledDates, setDisabledDates] = React.useState<Date[]>([]);
 
