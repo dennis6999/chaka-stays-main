@@ -77,7 +77,6 @@ const Properties = () => {
     if (maxPrice > 0 && maxPriceInData !== maxPrice) {
       setMaxPriceInData(maxPrice);
       setPriceRange([0, maxPrice]);
-      setDisplayPriceRange([0, maxPrice]);
     }
   }, [maxPrice]);
 
@@ -203,15 +202,14 @@ const Properties = () => {
           defaultValue={[0, maxPriceInData]}
           max={maxPriceInData}
           step={500}
-          value={displayPriceRange}
-          onValueChange={setDisplayPriceRange}
-          onValueCommit={setPriceRange} // Commit changes on drag end
+          value={priceRange}
+          onValueChange={setPriceRange}
           className="my-6"
         />
         <div className="flex items-center justify-between text-sm">
-          <div className="border px-2 py-1 rounded bg-background">KES {displayPriceRange[0]}</div>
+          <div className="border px-2 py-1 rounded bg-background">KES {priceRange[0]}</div>
           <div className="text-muted-foreground">-</div>
-          <div className="border px-2 py-1 rounded bg-background">KES {displayPriceRange[1]}</div>
+          <div className="border px-2 py-1 rounded bg-background">KES {priceRange[1]}</div>
         </div>
       </div>
 
