@@ -2,7 +2,7 @@
 create table public.reviews (
   id uuid default gen_random_uuid() primary key,
   property_id uuid references public.properties(id) on delete cascade not null,
-  user_id uuid references auth.users(id) on delete cascade not null,
+  user_id uuid references public.profiles(id) on delete cascade not null,
   rating integer not null check (rating >= 1 and rating <= 5),
   comment text,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,

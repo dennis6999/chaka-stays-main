@@ -76,12 +76,13 @@ const PropertyDetail = () => {
       if (!id) return;
       try {
         setIsLoading(true);
-        const [propertyData, reviewsData] = await Promise.all([
-          api.getProperty(id),
-          api.getReviews(id)
-        ]);
+        // Fetch property first (Critical)
+        const propertyData = await api.getProperty(id);
         setProperty(propertyData);
-        setReviews(reviewsData);
+
+        // Fetch reviews independently (Non-critical)
+        // We don't await this inside the same try block to avoid blocking the page
+        fetchReviews();
       } catch (error) {
         console.error('Error fetching property:', error);
         toast.error('Failed to load property details');
