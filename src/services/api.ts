@@ -161,6 +161,21 @@ export const api = {
         return data as Booking[];
     },
 
+    async getHostBookings(hostId: string) {
+        const { data, error } = await supabase
+            .from('bookings')
+            .select(`
+                *,
+                properties!inner(*)
+            `)
+            .eq('properties.host_id', hostId)
+            .neq('status', 'cancelled')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        return data as Booking[];
+    },
+
     async getPropertyBookings(propertyId: string) {
         const { data, error } = await supabase
             .from('bookings')
