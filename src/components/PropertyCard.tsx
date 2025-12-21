@@ -36,7 +36,7 @@ const PropertyCard = ({
     <Link to={`/property/${id}`} className="block h-full group">
       <div className="flex flex-col h-full bg-transparent">
         {/* Image - Modern full-width rounded look */}
-        <div className="relative aspect-square sm:aspect-[4/3] w-full overflow-hidden rounded-2xl sm:rounded-[1.5rem] bg-gray-100 shadow-sm group-hover:shadow-xl transition-all duration-500">
+        <div className="relative aspect-video sm:aspect-[4/3] w-full overflow-hidden rounded-xl sm:rounded-[1.5rem] bg-gray-100 shadow-sm group-hover:shadow-xl transition-all duration-500">
           <div className="absolute inset-0 bg-neutral-200 animate-pulse" />
           <img
             src={image}

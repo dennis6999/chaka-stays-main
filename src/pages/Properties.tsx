@@ -324,7 +324,7 @@ const Properties = () => {
         </div>
       </div>
 
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 py-6 flex-grow">
+      <div className="max-w-[1400px] mx-auto px-2 sm:px-8 lg:px-12 py-6 flex-grow">
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
 
           {/* Desktop Sidebar */}
@@ -345,7 +345,7 @@ const Properties = () => {
           {/* Main Content */}
           <div className="flex-1">
             {/* Mobile Filter Bar & Sort */}
-            <div className="lg:hidden sticky top-20 z-30 -mx-6 px-6 py-3 bg-background/80 backdrop-blur-xl border-b border-border/40 shadow-sm mb-6 flex items-center justify-between gap-3">
+            <div className="lg:hidden sticky top-20 z-30 -mx-2 px-2 py-3 bg-background/80 backdrop-blur-xl border-b border-border/40 shadow-sm mb-6 flex items-center justify-between gap-3">
               {/* Mobile Filter Sheet Trigger */}
               <Sheet>
                 <SheetTrigger asChild>
