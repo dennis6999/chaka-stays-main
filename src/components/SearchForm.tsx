@@ -84,7 +84,12 @@ const SearchForm = () => {
                   onSelect={(date) => {
                     setCheckIn(date);
                     setCheckInOpen(false);
+                    // Reset checkout if it's before new check-in
+                    if (checkOut && date && checkOut <= date) {
+                      setCheckOut(undefined);
+                    }
                   }}
+                  disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                   initialFocus
                 />
               </PopoverContent>
@@ -97,10 +102,11 @@ const SearchForm = () => {
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-full h-12 justify-start text-left font-normal bg-muted/50 border-0 hover:bg-muted"
+                  className={`w-full h-12 justify-start text-left font-normal bg-muted/50 border-0 hover:bg-muted ${!checkIn ? 'text-muted-foreground cursor-not-allowed' : ''}`}
+                  disabled={!checkIn}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-                  {checkOut ? <span className="truncate">{format(checkOut, "LLL dd, y")}</span> : <span>Select date</span>}
+                  {checkOut ? <span className="truncate">{format(checkOut, "LLL dd, y")}</span> : <span>{checkIn ? "Select date" : "Select check-in first"}</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
@@ -110,6 +116,11 @@ const SearchForm = () => {
                   onSelect={(date) => {
                     setCheckOut(date);
                     setCheckOutOpen(false);
+                  }}
+                  disabled={(date) => {
+                    if (checkIn && date <= checkIn) return true;
+                    if (date < new Date(new Date().setHours(0, 0, 0, 0))) return true;
+                    return false;
                   }}
                   initialFocus
                 />
