@@ -684,6 +684,10 @@ const PropertyDetail = () => {
                             onSelect={(date) => {
                               setCheckIn(date);
                               setCheckInOpen(false);
+                              // Reset checkout if it's before new check-in
+                              if (checkOut && date && checkOut <= date) {
+                                setCheckOut(undefined);
+                              }
                             }}
                             disabled={(date) => {
                               // Disable past dates
@@ -700,8 +704,11 @@ const PropertyDetail = () => {
                       <Label className="text-xs uppercase font-bold text-muted-foreground">Check-out</Label>
                       <Popover open={checkOutOpen} onOpenChange={setCheckOutOpen}>
                         <PopoverTrigger asChild>
-                          <button className="w-full text-left font-normal text-sm pt-1 focus:outline-none">
-                            {checkOut ? format(checkOut, "dd/MM/yyyy") : "Add date"}
+                          <button
+                            className={`w-full text-left font-normal text-sm pt-1 focus:outline-none ${!checkIn ? 'text-muted-foreground cursor-not-allowed' : ''}`}
+                            disabled={!checkIn}
+                          >
+                            {checkOut ? format(checkOut, "dd/MM/yyyy") : (checkIn ? "Add date" : "Select check-in first")}
                           </button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="end">
@@ -713,7 +720,7 @@ const PropertyDetail = () => {
                               setCheckOutOpen(false);
                             }}
                             disabled={(date) => {
-                              // Disable past dates + CheckIn date (must be at least 1 night)
+                              // Disable past dates OR dates before checkIn
                               if (checkIn && date <= checkIn) return true;
                               if (date < new Date(new Date().setHours(0, 0, 0, 0))) return true;
                               // Disable booked dates
