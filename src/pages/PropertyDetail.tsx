@@ -122,7 +122,25 @@ const PropertyDetail = () => {
 
   React.useEffect(() => {
     if (!carouselApi) return;
-    carouselApi.scrollTo(activeImage);
+
+    const onSelect = () => {
+      setActiveImage(carouselApi.selectedScrollSnap());
+    };
+
+    carouselApi.on("select", onSelect);
+    carouselApi.scrollTo(activeImage); // Sync initial state
+
+    return () => {
+      carouselApi.off("select", onSelect);
+    };
+  }, [carouselApi]);
+
+  // Keep this to allow clicking thumbnails to control carousel
+  React.useEffect(() => {
+    if (!carouselApi) return;
+    if (carouselApi.selectedScrollSnap() !== activeImage) {
+      carouselApi.scrollTo(activeImage);
+    }
   }, [activeImage, carouselApi]);
 
   React.useEffect(() => {
