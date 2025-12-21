@@ -63,4 +63,4 @@
 - [x] Show clear "Check your email" message after signup <!-- id: 40 -->
 
 ## Deployment Debugging
-- [ ] Investigate infinite loading on Properties page <!-- id: 41 -->
+- [ ] Investigate infinite loading on Home and Properties pages (Production) <!-- id: 41 -->

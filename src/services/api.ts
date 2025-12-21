@@ -36,14 +36,21 @@ export interface Booking {
     properties?: Property; // Join result
 }
 
+const timeout = (ms: number) => new Promise((_, reject) => setTimeout(() => reject(new Error('Request timed out')), ms));
+
 export const api = {
     // --- Properties ---
 
     async getProperties() {
-        const { data, error } = await supabase
+        const fetchPromise = supabase
             .from('properties')
             .select('*')
             .order('created_at', { ascending: false });
+
+        const { data, error } = await Promise.race([
+            fetchPromise,
+            timeout(10000)
+        ]) as any;
 
         if (error) throw error;
         return data as Property[];
@@ -51,14 +58,21 @@ export const api = {
 
     async getFeaturedProperties() {
         // For now, just getting the first 3. In real app, could filter by rating > 4.5
-        const { data, error } = await supabase
+        const fetchPromise = supabase
             .from('properties')
             .select('*')
             .limit(3);
 
+        const { data, error } = await Promise.race([
+            fetchPromise,
+            timeout(10000)
+        ]) as any;
+
         if (error) throw error;
         return data as Property[];
     },
+
+    // ... rest of the file (keep existing methods)
 
     async getProperty(id: string) {
         const { data, error } = await supabase
