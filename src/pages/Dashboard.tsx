@@ -53,12 +53,15 @@ const Dashboard: React.FC = () => {
     location: '',
     price: '',
     description: '',
-    image_url: '',
+    price: '',
+    description: '',
+    images: [] as string[],
     max_guests: 2,
     bedrooms: 1,
     beds: 1,
     baths: 1,
-    amenities: [] as string[]
+    amenities: [] as string[],
+    property_type: 'Stays'
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -148,12 +151,13 @@ const Dashboard: React.FC = () => {
         location: newProperty.location,
         price_per_night: parseFloat(newProperty.price),
         description: newProperty.description,
-        images: newProperty.image_url ? [newProperty.image_url] : [],
+        images: newProperty.images,
         amenities: newProperty.amenities,
         max_guests: newProperty.max_guests,
         bedrooms: newProperty.bedrooms,
         beds: newProperty.beds,
-        baths: newProperty.baths
+        baths: newProperty.baths,
+        property_type: newProperty.property_type
       };
 
       if (editingId) {
@@ -233,12 +237,13 @@ const Dashboard: React.FC = () => {
       location: '',
       price: '',
       description: '',
-      image_url: '',
+      images: [],
       max_guests: 2,
       bedrooms: 1,
       beds: 1,
       baths: 1,
-      amenities: []
+      amenities: [],
+      property_type: 'Stays'
     });
   };
 
@@ -248,12 +253,13 @@ const Dashboard: React.FC = () => {
       location: property.location,
       price: property.price_per_night.toString(),
       description: property.description,
-      image_url: property.images?.[0] || '',
+      images: property.images || [],
       max_guests: property.max_guests || 2,
       bedrooms: property.bedrooms || 1,
       beds: property.beds || 1,
       baths: property.baths || 1,
-      amenities: property.amenities || []
+      amenities: property.amenities || [],
+      property_type: property.property_type || 'Stays'
     });
     setEditingId(property.id);
     setShowAddProperty(true);
@@ -299,12 +305,13 @@ const Dashboard: React.FC = () => {
                   location: '',
                   price: '',
                   description: '',
-                  image_url: '',
+                  images: [],
                   max_guests: 2,
                   bedrooms: 1,
                   beds: 1,
                   baths: 1,
-                  amenities: []
+                  amenities: [],
+                  property_type: 'Stays'
                 });
                 setActiveTab('properties');
               }} className="bg-primary hover:bg-primary/90">
