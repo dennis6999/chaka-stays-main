@@ -125,10 +125,21 @@ const PropertyDetail = () => {
       }
     };
 
+    const checkFavoriteStatus = async () => {
+      if (!user || !id) return;
+      try {
+        const status = await api.getFavoriteStatus(id, user.id);
+        setIsLiked(status);
+      } catch (error) {
+        console.error('Error checking favorite status:', error);
+      }
+    };
+
     loadProperty();
     fetchReviews();
     fetchAvailability();
-  }, [id]);
+    checkFavoriteStatus();
+  }, [id, user]);
 
   const checkAuth = () => {
     if (!user) {
@@ -225,10 +236,31 @@ const PropertyDetail = () => {
                 {property.location}
               </div>
               <div className="ml-auto flex gap-2">
-                <Button variant="ghost" size="sm" className="hover:bg-neutral/10" onClick={() => setIsLiked(!isLiked)}>
-                  <Heart className={`h-5 w-5 mr-2 ${isLiked ? 'fill-destructive text-destructive' : ''}`} /> Save
+                <Button variant="ghost" size="sm" className="hover:bg-neutral/10" onClick={async () => {
+                  if (!user) {
+                    setShowLoginDialog(true);
+                    return;
+                  }
+                  try {
+                    if (isLiked) {
+                      await api.removeFavorite(property.id, user.id);
+                      setIsLiked(false);
+                      toast.success("Removed from favorites");
+                    } else {
+                      await api.addFavorite(property.id, user.id);
+                      setIsLiked(true);
+                      toast.success("Saved to favorites");
+                    }
+                  } catch (error) {
+                    toast.error("Failed to update favorites");
+                  }
+                }}>
+                  <Heart className={`h-5 w-5 mr-2 ${isLiked ? 'fill-destructive text-destructive' : ''}`} /> {isLiked ? 'Saved' : 'Save'}
                 </Button>
-                <Button variant="ghost" size="sm" className="hover:bg-neutral/10">
+                <Button variant="ghost" size="sm" className="hover:bg-neutral/10" onClick={() => {
+                  navigator.clipboard.writeText(window.location.href);
+                  toast.success("Link copied to clipboard!");
+                }}>
                   <Share2 className="h-5 w-5 mr-2" /> Share
                 </Button>
               </div>

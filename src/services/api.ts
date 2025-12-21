@@ -315,5 +315,37 @@ export const api = {
             .getPublicUrl(filePath);
 
         return data.publicUrl;
+    },
+
+    // --- Favorites ---
+
+    async getFavoriteStatus(propertyId: string, userId: string) {
+        const { data, error } = await supabase
+            .from('favorites')
+            .select('id')
+            .eq('property_id', propertyId)
+            .eq('user_id', userId)
+            .maybeSingle();
+
+        if (error) throw error;
+        return !!data;
+    },
+
+    async addFavorite(propertyId: string, userId: string) {
+        const { error } = await supabase
+            .from('favorites')
+            .insert({ property_id: propertyId, user_id: userId });
+
+        if (error) throw error;
+    },
+
+    async removeFavorite(propertyId: string, userId: string) {
+        const { error } = await supabase
+            .from('favorites')
+            .delete()
+            .eq('property_id', propertyId)
+            .eq('user_id', userId);
+
+        if (error) throw error;
     }
 };

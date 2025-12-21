@@ -97,3 +97,9 @@
 - [ ] Implement `cancelBooking` function in `api.ts`
 - [ ] Add "Cancel Booking" button to `Dashboard.tsx` (Bookings tab)
 - [ ] Handle cancellation UI updates (optimistic update or refetch)
+
+## Save & Share Implementation
+- [x] Create `favorites` table schema <!-- id: 54 -->
+- [x] Implement `api.toggleFavorite` and `api.getFavorite` <!-- id: 55 -->
+- [x] Connect Save button in `PropertyDetail` <!-- id: 56 -->
+- [x] Implement Share button functionality <!-- id: 57 -->
