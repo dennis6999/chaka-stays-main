@@ -204,13 +204,7 @@ const Properties = () => {
         </Select>
       </div>
 
-      {!isMobile && (
-        <div className="pt-2">
-          <Button className="w-full bg-primary hover:bg-primary/90 shadow-md">
-            Update Results
-          </Button>
-        </div>
-      )}
+
     </div>
   );
 

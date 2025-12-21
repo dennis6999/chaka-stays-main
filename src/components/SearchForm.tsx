@@ -17,14 +17,20 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { format } from 'date-fns';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const SearchForm = () => {
   const navigate = useNavigate();
-  const [location, setLocation] = React.useState('chaka');
-  const [checkIn, setCheckIn] = React.useState<Date | undefined>(undefined);
-  const [checkOut, setCheckOut] = React.useState<Date | undefined>(undefined);
-  const [guests, setGuests] = React.useState('2');
+  const [searchParams] = useSearchParams();
+
+  const [location, setLocation] = React.useState(searchParams.get('location') || 'chaka');
+  const [checkIn, setCheckIn] = React.useState<Date | undefined>(
+    searchParams.get('checkIn') ? new Date(searchParams.get('checkIn')!) : undefined
+  );
+  const [checkOut, setCheckOut] = React.useState<Date | undefined>(
+    searchParams.get('checkOut') ? new Date(searchParams.get('checkOut')!) : undefined
+  );
+  const [guests, setGuests] = React.useState(searchParams.get('guests') || '2');
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
