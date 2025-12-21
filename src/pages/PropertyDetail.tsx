@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetDescription,
   SheetHeader,
@@ -474,7 +475,9 @@ const PropertyDetail = () => {
                         <Calendar mode="single" selected={checkOut} onSelect={setCheckOut} className="rounded-md" />
                       </div>
                     </div>
-                    <Button onClick={() => document.body.click()} className="w-full mt-2 h-12 text-base shadow-lg bg-primary text-primary-foreground mb-8">Confirm Dates</Button>
+                    <SheetClose asChild>
+                      <Button className="w-full mt-2 h-12 text-base shadow-lg bg-primary text-primary-foreground mb-8">Confirm Dates</Button>
+                    </SheetClose>
                   </div>
                 </div>
               </SheetContent>
