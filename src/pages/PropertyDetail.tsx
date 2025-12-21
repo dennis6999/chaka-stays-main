@@ -149,6 +149,11 @@ const PropertyDetail = () => {
       return;
     }
 
+    if (guests > property.max_guests) {
+      toast.error(`This property only accommodates up to ${property.max_guests} guests`);
+      return;
+    }
+
     try {
       setIsBooking(true);
 
@@ -459,9 +464,9 @@ const PropertyDetail = () => {
                         <SelectValue placeholder="1 guest" />
                       </SelectTrigger>
                       <SelectContent>
-                        {[1, 2, 3, 4, 5, 6].map((num) => (
-                          <SelectItem key={num} value={num.toString()}>
-                            {num} {num === 1 ? 'guest' : 'guests'}
+                        {[...Array(property.max_guests)].map((_, i) => (
+                          <SelectItem key={i + 1} value={(i + 1).toString()}>
+                            {i + 1} {(i + 1) === 1 ? 'guest' : 'guests'}
                           </SelectItem>
                         ))}
                       </SelectContent>
