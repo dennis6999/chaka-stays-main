@@ -114,6 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       email,
       password,
       options: {
+        emailRedirectTo: window.location.origin + '/auth',
         data: {
           full_name,
           role: user_type, // Persist role in metadata as fallback
