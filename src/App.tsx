@@ -18,6 +18,30 @@ import { Toaster } from 'sonner';
 const queryClient = new QueryClient();
 
 const App: React.FC = () => {
+  const [isEnvMissing, setIsEnvMissing] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!import.meta.env.VITE_SUPABASE_URL) {
+      console.error("CRITICAL: VITE_SUPABASE_URL is missing!");
+      setIsEnvMissing(true);
+    }
+  }, []);
+
+  if (isEnvMissing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-destructive/10 p-4">
+        <div className="bg-destructive text-destructive-foreground p-6 rounded-lg shadow-xl max-w-md w-full">
+          <h2 className="text-2xl font-bold mb-2">Configuration Error</h2>
+          <p className="mb-4">The application cannot connect to the database.</p>
+          <div className="bg-black/20 p-4 rounded text-sm font-mono overflow-auto">
+            Error: Missing VITE_SUPABASE_URL environment variable.
+          </div>
+          <p className="mt-4 text-sm opacity-90">Please check your Netlify Site Settings &gt; Environment Variables.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
