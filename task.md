@@ -50,11 +50,11 @@
 - [x] Increase Max Price Range to 20,000 <!-- id: 30 -->
 
 ## SEO Enhancement
-- [ ] Create `SEO` component <!-- id: 31 -->
-- [ ] Integrate `HelmetProvider` in `main.tsx` <!-- id: 32 -->
-- [ ] Update `index.html` with base meta tags <!-- id: 33 -->
-- [ ] Add `SEO` component to `Index.tsx` and `PropertyDetail.tsx` <!-- id: 34 -->
-- [ ] Create `public/sitemap.xml` and `public/robots.txt` <!-- id: 35 -->
+- [x] Create `SEO` component <!-- id: 31 -->
+- [x] Integrate `HelmetProvider` in `main.tsx` <!-- id: 32 -->
+- [x] Update `index.html` with base meta tags <!-- id: 33 -->
+- [x] Add `SEO` component to `Index.tsx` and `PropertyDetail.tsx` <!-- id: 34 -->
+- [x] Create `public/sitemap.xml` and `public/robots.txt` <!-- id: 35 -->
 - [x] Implement Mobile Filter Drawer/Sheet (Stop stacking filters) <!-- id: 31 -->
 - [x] Refine Mobile Typography & Spacing (Remove "rookie" feel) <!-- id: 32 -->
 - [x] Optimize Touch Targets & Interactions <!-- id: 33 -->
