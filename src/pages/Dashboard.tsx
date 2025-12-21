@@ -882,7 +882,20 @@ const Dashboard: React.FC = () => {
               ) : favorites.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {favorites.map((property) => (
-                    <PropertyCard key={property.id} property={property} />
+                    <PropertyCard
+                      key={property.id}
+                      id={property.id}
+                      name={property.title}
+                      location={property.location}
+                      price={property.price_per_night}
+                      rating={property.rating}
+                      image={property.images?.[0] || "https://images.unsplash.com/photo-1512918760383-ed5341cf3e3b?auto=format&fit=crop&w=1600&q=80"}
+                      type={property.property_type || "Stays"}
+                      guests={property.max_guests}
+                      bedrooms={property.bedrooms}
+                      beds={property.beds}
+                      baths={property.baths}
+                    />
                   ))}
                 </div>
               ) : (
