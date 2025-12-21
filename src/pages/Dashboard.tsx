@@ -470,6 +470,19 @@ const Dashboard: React.FC = () => {
                 <div className="flex justify-center py-12">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
+              ) : bookings.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed border-border rounded-xl bg-neutral/5">
+                  <div className="h-16 w-16 bg-neutral/10 rounded-full flex items-center justify-center mb-4">
+                    <Calendar className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-xl font-serif font-bold mb-2">No bookings yet</h3>
+                  <p className="text-muted-foreground max-w-sm mx-auto mb-6">
+                    You haven't made any reservations. Your next adventure is just a click away!
+                  </p>
+                  <Button onClick={() => navigate('/')} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                    Explore Properties
+                  </Button>
+                </div>
               ) : (
                 <div className="grid gap-4">
                   {bookings.map((booking) => (
