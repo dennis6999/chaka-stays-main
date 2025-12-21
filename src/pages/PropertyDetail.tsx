@@ -182,10 +182,16 @@ const PropertyDetail = () => {
   };
 
   const handleBookNow = async () => {
+    if (!checkIn || !checkOut) {
+      toast.error("Please select a check-in and check-out date first.");
+      setMobileBookingOpen(true);
+      return;
+    }
+
     const isAuthed = checkAuth();
     if (!isAuthed) return;
 
-    if (!user || !property || !checkIn || !checkOut) return;
+    if (!user || !property) return;
 
     if (user.id === property.host_id) {
       toast.error("You cannot book your own property");
@@ -791,14 +797,14 @@ const PropertyDetail = () => {
 
           {/* Mobile Fixed Bottom Bar */}
           <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border z-40 flex items-center justify-between safe-area-bottom shadow-[0_-5px_10px_rgba(0,0,0,0.05)]">
-            <Sheet>
+            <Sheet open={mobileBookingOpen} onOpenChange={setMobileBookingOpen}>
               <SheetTrigger asChild>
                 <div className="cursor-pointer">
                   <div className="flex items-baseline gap-1">
                     <span className="text-xl font-bold font-serif text-primary">KES {property.price_per_night}</span>
                     <span className="text-sm text-muted-foreground">/ night</span>
                   </div>
-                  <div className="text-xs text-muted-foreground underline">
+                  <div className={`text-xs underline font-medium ${!checkIn || !checkOut ? 'text-primary animate-pulse decoration-2' : 'text-muted-foreground'}`}>
                     {checkIn && checkOut ? `${Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))} nights` : 'Select dates'}
                   </div>
                 </div>
@@ -857,8 +863,8 @@ const PropertyDetail = () => {
               </SheetContent>
             </Sheet>
 
-            <Button onClick={handleBookNow} disabled={isBooking} className="bg-primary px-8">
-              {isBooking ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Reserve'}
+            <Button onClick={handleBookNow} disabled={isBooking} className="bg-primary px-8 shadow-lg shadow-primary/25">
+              {isBooking ? <Loader2 className="h-4 w-4 animate-spin" /> : (!checkIn || !checkOut ? 'Check Availability' : 'Reserve')}
             </Button>
           </div>
         </div>

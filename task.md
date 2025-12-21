@@ -110,3 +110,24 @@
 - [x] Implement `api.toggleFavorite` and `api.getFavorite` <!-- id: 55 -->
 - [x] Connect Save button in `PropertyDetail` <!-- id: 56 -->
 - [x] Implement Share button functionality <!-- id: 57 -->
+
+## Comprehensive Site-Wide Audit (Current Phase)
+- [x] **Home Page Mobile Audit** <!-- id: 58 -->
+  - [x] Verify Hero text & button scaling
+  - [x] Verify SearchForm stacking & Calendar logic (Fixed)
+  - [x] Check Featured Section layout stability
+- [x] **Properties Page Mobile Audit** <!-- id: 59 -->
+  - [x] Verify Filter Drawer/Sheet interactions
+  - [x] Check Sort dropdown usability
+  - [x] Verify Property Card tap targets
+- [x] **Property Detail Mobile Audit** <!-- id: 60 -->
+  - [x] Verify Image Gallery Carousel (Fixed)
+  - [x] Verify Mobile Booking Sheet Dates (Fixed)
+  - [x] Check Description/Amenities expansion
+- [x] **Functional Smoke Tests** <!-- id: 61 -->
+  - [x] Full Booking Flow (Search -> Select -> Book)
+  - [x] Authentication Flow (Login -> Redirect -> Logout)
+  - [x] Favorites Toggle Persistence
+- [x] **Dashboard Mobile Audit** <!-- id: 62 -->
+  - [x] Verify Tab navigation stability
+  - [x] Check Property Management forms on mobile
