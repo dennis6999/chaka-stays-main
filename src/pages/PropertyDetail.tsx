@@ -815,13 +815,38 @@ const PropertyDetail = () => {
                     <div className="space-y-3">
                       <Label className="text-base font-semibold">Check-in Date</Label>
                       <div className="border rounded-lg p-2 bg-card flex justify-center">
-                        <Calendar mode="single" selected={checkIn} onSelect={setCheckIn} className="rounded-md" />
+                        <Calendar
+                          mode="single"
+                          selected={checkIn}
+                          onSelect={(date) => {
+                            setCheckIn(date);
+                            // Reset checkout if it's before new check-in
+                            if (checkOut && date && checkOut <= date) {
+                              setCheckOut(undefined);
+                            }
+                          }}
+                          disabled={(date) => {
+                            if (date < new Date(new Date().setHours(0, 0, 0, 0))) return true;
+                            return disabledDates.some(d => d.toDateString() === date.toDateString());
+                          }}
+                          className="rounded-md"
+                        />
                       </div>
                     </div>
                     <div className="space-y-3">
                       <Label className="text-base font-semibold">Check-out Date</Label>
                       <div className="border rounded-lg p-2 bg-card flex justify-center">
-                        <Calendar mode="single" selected={checkOut} onSelect={setCheckOut} className="rounded-md" />
+                        <Calendar
+                          mode="single"
+                          selected={checkOut}
+                          onSelect={setCheckOut}
+                          disabled={(date) => {
+                            if (checkIn && date <= checkIn) return true;
+                            if (date < new Date(new Date().setHours(0, 0, 0, 0))) return true;
+                            return disabledDates.some(d => d.toDateString() === date.toDateString());
+                          }}
+                          className="rounded-md"
+                        />
                       </div>
                     </div>
                     <SheetClose asChild>
