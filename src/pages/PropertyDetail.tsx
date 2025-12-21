@@ -10,6 +10,11 @@ import {
   TabsTrigger
 } from '@/components/ui/tabs';
 import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -293,9 +298,26 @@ const PropertyDetail = () => {
                     alt="Details"
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
                   />
-                  <Button variant="secondary" className="absolute bottom-4 right-4 text-xs bg-white text-black hover:bg-neutral">
-                    View all photos
-                  </Button>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="secondary" className="absolute bottom-4 right-4 text-xs bg-white text-black hover:bg-neutral">
+                        View all photos
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-4 md:p-10">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                        {property.images.map((image, index) => (
+                          <div key={index} className={`relative rounded-lg overflow-hidden border border-border ${index % 3 === 0 ? 'md:col-span-2 aspect-video' : 'aspect-square'}`}>
+                            <img
+                              src={image}
+                              alt={`Photo ${index + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </div>
             )}
