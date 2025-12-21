@@ -426,23 +426,7 @@ const PropertyDetail = () => {
                                 </div>
                               </div>
 
-                              {/* Mock Rating Categories (Since backend doesn't have them yet) */}
-                              <div className="space-y-3 pt-2">
-                                {['Cleanliness', 'Comfort', 'Facilities', 'Staff', 'Value for money'].map((cat, i) => (
-                                  <div key={cat} className="space-y-1">
-                                    <div className="flex justify-between text-xs font-medium">
-                                      <span>{cat}</span>
-                                      <span>{(property.rating - (i * 0.1)).toFixed(1)}</span>
-                                    </div>
-                                    <div className="h-1.5 w-full bg-neutral/10 rounded-full overflow-hidden">
-                                      <div
-                                        className="h-full bg-primary rounded-full"
-                                        style={{ width: `${((property.rating - (i * 0.1)) / 5) * 100}%` }}
-                                      />
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
+
 
                               <div className="pt-6 border-t border-border mt-auto">
                                 <div className="flex justify-between items-baseline mb-4">
