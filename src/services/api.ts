@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 export interface Property {
     id: string;
@@ -394,6 +395,15 @@ export const api = {
             bookings: data.bookings || 0,
             revenue: data.revenue || 0
         };
+    },
+
+    async toggleBanProperty(id: string, banStatus: boolean) {
+        const { error } = await supabase.rpc('toggle_ban_property', {
+            p_id: id,
+            ban_status: banStatus
+        });
+
+        if (error) throw error;
     },
 
     async getAllUsers() {
