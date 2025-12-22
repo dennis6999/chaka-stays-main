@@ -14,6 +14,7 @@ export interface Property {
     amenities: string[];
     images: string[];
     property_type?: string;
+    is_banned?: boolean;
     rating: number;
     review_count: number;
     created_at: string;

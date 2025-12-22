@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Users, Home, Calendar, TrendingUp, ShieldAlert, LogOut, Trash2, Search, MapPin } from 'lucide-react';
+import {
+    Users, Home, Calendar, TrendingUp, ShieldAlert, LogOut,
+    Trash2, Search, MapPin, Menu, Ban, CheckCircle, MoreHorizontal
+} from 'lucide-react';
 import { api, Property } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
