@@ -106,7 +106,7 @@ const SearchForm = () => {
                   disabled={!checkIn}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-                  {checkOut ? <span className="truncate">{format(checkOut, "LLL dd, y")}</span> : <span>{checkIn ? "Select date" : "Select check-in first"}</span>}
+                  {checkOut ? <span className="truncate">{format(checkOut, "LLL dd, y")}</span> : <span className="truncate">{checkIn ? "Select date" : "Select check-in first"}</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
