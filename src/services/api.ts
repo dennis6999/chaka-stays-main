@@ -372,26 +372,25 @@ export const api = {
             .select('is_admin')
             .eq('id', userId)
             .single();
-        
+
         if (error) return false;
         return data?.is_admin || false;
     },
 
     async getAdminStats() {
-        // Fetch specific counts using count: 'exact'
-        const { count: userCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
-        const { count: propertyCount } = await supabase.from('properties').select('*', { count: 'exact', head: true });
-        const { count: bookingCount } = await supabase.from('bookings').select('*', { count: 'exact', head: true });
-        
-        // Simple aggregate for revenue (might be slow on large DBs, but fine for MVP)
-        const { data: bookings } = await supabase.from('bookings').select('total_price').neq('status', 'cancelled');
-        const totalRevenue = bookings?.reduce((sum, b) => sum + (b.total_price || 0), 0) || 0;
+        const { data, error } = await supabase.rpc('get_admin_stats');
+
+        if (error) {
+            console.error('Admin Stats RPC Error:', error);
+            // Fallback to client-side if RPC fails (e.g. function doesn't exist yet)
+            return { users: 0, properties: 0, bookings: 0, revenue: 0 };
+        }
 
         return {
-            users: userCount || 0,
-            properties: propertyCount || 0,
-            bookings: bookingCount || 0,
-            revenue: totalRevenue
+            users: data.users || 0,
+            properties: data.properties || 0,
+            bookings: data.bookings || 0,
+            revenue: data.revenue || 0
         };
     },
 
@@ -400,7 +399,7 @@ export const api = {
             .from('profiles')
             .select('*')
             .order('created_at', { ascending: false });
-        
+
         if (error) throw error;
         return data;
     }
