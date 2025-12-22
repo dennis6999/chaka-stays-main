@@ -20,6 +20,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 const AdminDashboard: React.FC = () => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
@@ -29,6 +40,11 @@ const AdminDashboard: React.FC = () => {
     const [propertiesList, setPropertiesList] = useState<Property[]>([]);
     const [activeView, setActiveView] = useState<'overview' | 'users' | 'properties'>('overview');
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    // Dialog State
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [actionType, setActionType] = useState<'delete' | 'ban' | 'unban' | null>(null);
+    const [selectedProperty, setSelectedProperty] = useState<{ id: string, title: string } | null>(null);
 
     useEffect(() => {
         fetchAdminData();
@@ -55,29 +71,46 @@ const AdminDashboard: React.FC = () => {
         }
     };
 
-    const handleDeleteProperty = async (id: string, title: string) => {
-        if (!confirm(`PERMANENT DELETE: Are you sure you want to delete "${title}"? This cannot be undone.`)) return;
-
-        try {
-            await api.deleteProperty(id);
-            setPropertiesList(prev => prev.filter(p => p.id !== id));
-            toast.success("Property permanently deleted");
-            refreshStats();
-        } catch (error: any) {
-            toast.error(`Delete failed: ${error.message}`);
-        }
+    // Open Dialog handlers
+    const confirmDelete = (id: string, title: string) => {
+        setSelectedProperty({ id, title });
+        setActionType('delete');
+        setDialogOpen(true);
     };
 
-    const handleToggleBan = async (id: string, currentStatus: boolean, title: string) => {
-        const action = currentStatus ? "Unban" : "Ban";
-        if (!confirm(`${action} Property: Are you sure you want to ${action.toLowerCase()} "${title}"?`)) return;
+    const confirmBanStatus = (id: string, currentStatus: boolean, title: string) => {
+        setSelectedProperty({ id, title });
+        setActionType(currentStatus ? 'unban' : 'ban');
+        setDialogOpen(true);
+    };
+
+    // Execute logic
+    const handleExecuteAction = async () => {
+        if (!selectedProperty || !actionType) return;
+
+        const { id, title } = selectedProperty;
 
         try {
-            await api.toggleBanProperty(id, !currentStatus);
-            setPropertiesList(prev => prev.map(p => p.id === id ? { ...p, is_banned: !currentStatus } : p));
-            toast.success(`Property ${action.toLowerCase()}ned successfully`);
+            if (actionType === 'delete') {
+                await api.deleteProperty(id);
+                setPropertiesList(prev => prev.filter(p => p.id !== id));
+                toast.success("Property permanently deleted");
+                refreshStats();
+            } else if (actionType === 'ban') {
+                await api.toggleBanProperty(id, true);
+                setPropertiesList(prev => prev.map(p => p.id === id ? { ...p, is_banned: true } : p));
+                toast.success("Property BANNED successfully");
+            } else if (actionType === 'unban') {
+                await api.toggleBanProperty(id, false);
+                setPropertiesList(prev => prev.map(p => p.id === id ? { ...p, is_banned: false } : p));
+                toast.success("Property Unbanned successfully");
+            }
         } catch (error: any) {
-            toast.error(`${action} failed: ${error.message}`);
+            toast.error(`Action failed: ${error.message}`);
+        } finally {
+            setDialogOpen(false);
+            setSelectedProperty(null);
+            setActionType(null);
         }
     };
 
@@ -154,6 +187,36 @@ const AdminDashboard: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-slate-50 flex font-sans">
+            <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <AlertDialogContent className="bg-white border-none shadow-2xl rounded-2xl">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="text-xl font-bold text-slate-900">
+                            {actionType === 'delete' && <span className="flex items-center gap-2 text-red-600"><Trash2 className="h-5 w-5" /> Permanently Delete Property?</span>}
+                            {actionType === 'ban' && <span className="flex items-center gap-2 text-amber-600"><Ban className="h-5 w-5" /> Ban Property?</span>}
+                            {actionType === 'unban' && <span className="flex items-center gap-2 text-green-600"><CheckCircle className="h-5 w-5" /> Unban Property?</span>}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-slate-600 pt-2 text-base">
+                            {actionType === 'delete' && `Are you sure you want to delete "${selectedProperty?.title}"? This action CANNOT be undone and will remove all associated data.`}
+                            {actionType === 'ban' && `This will hide "${selectedProperty?.title}" from the public site immediately. You can unban it later.`}
+                            {actionType === 'unban' && `This will make "${selectedProperty?.title}" visible to the public again.`}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="mt-4">
+                        <AlertDialogCancel className="border-slate-200 hover:bg-slate-50 text-slate-700">Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleExecuteAction}
+                            className={`
+                                ${actionType === 'delete' ? 'bg-red-600 hover:bg-red-700' : ''}
+                                ${actionType === 'ban' ? 'bg-amber-600 hover:bg-amber-700 text-white' : ''}
+                                ${actionType === 'unban' ? 'bg-green-600 hover:bg-green-700' : ''}
+                            `}
+                        >
+                            Confirm {actionType === 'delete' ? 'Delete' : actionType === 'ban' ? 'Ban' : 'Unban'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
             {/* Desktop Sidebar */}
             <div className="hidden md:block w-64 fixed inset-y-0 z-50 shadow-xl">
                 <SidebarContent />
@@ -301,11 +364,11 @@ const AdminDashboard: React.FC = () => {
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem onClick={() => handleToggleBan(property.id, !!property.is_banned, property.title)}>
+                                                    <DropdownMenuItem onClick={() => confirmBanStatus(property.id, !!property.is_banned, property.title)}>
                                                         {property.is_banned ? 'Unban Property' : 'Ban Property'}
                                                     </DropdownMenuItem>
                                                     <DropdownMenuSeparator />
-                                                    <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteProperty(property.id, property.title)}>
+                                                    <DropdownMenuItem className="text-red-600" onClick={() => confirmDelete(property.id, property.title)}>
                                                         Delete Permanently
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
@@ -316,7 +379,7 @@ const AdminDashboard: React.FC = () => {
                                                     size="sm"
                                                     variant={property.is_banned ? "default" : "outline"}
                                                     className={property.is_banned ? "bg-green-600 hover:bg-green-700 border-none" : "hover:bg-amber-50 text-amber-700 border-amber-200"}
-                                                    onClick={() => handleToggleBan(property.id, !!property.is_banned, property.title)}
+                                                    onClick={() => confirmBanStatus(property.id, !!property.is_banned, property.title)}
                                                 >
                                                     {property.is_banned ? <><CheckCircle className="h-4 w-4 mr-2" /> Unban</> : <><Ban className="h-4 w-4 mr-2" /> Ban Property</>}
                                                 </Button>
@@ -324,7 +387,7 @@ const AdminDashboard: React.FC = () => {
                                                     size="sm"
                                                     variant="ghost"
                                                     className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                                    onClick={() => handleDeleteProperty(property.id, property.title)}
+                                                    onClick={() => confirmDelete(property.id, property.title)}
                                                 >
                                                     <Trash2 className="h-4 w-4 mr-2" /> Delete
                                                 </Button>
