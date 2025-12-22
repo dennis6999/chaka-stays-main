@@ -54,7 +54,7 @@ const SearchForm = () => {
           <div className="space-y-2">
             <Label htmlFor="location" className="text-sm font-medium">Location</Label>
             <Select value={location} onValueChange={setLocation}>
-              <SelectTrigger id="location" className="h-12 bg-muted/50 border-0 focus:ring-1 focus:ring-primary/20">
+              <SelectTrigger id="location" className="h-12 bg-muted/50 border-0 focus:ring-1 focus:ring-primary/20 text-base">
                 <SelectValue placeholder="Select location" />
               </SelectTrigger>
               <SelectContent>
@@ -71,7 +71,7 @@ const SearchForm = () => {
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-full h-12 justify-start text-left font-normal bg-muted/50 border-0 hover:bg-muted"
+                  className="w-full h-12 justify-start text-left font-normal bg-muted/50 border-0 hover:bg-muted text-base"
                 >
                   <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                   {checkIn ? <span className="truncate">{format(checkIn, "LLL dd, y")}</span> : <span>Select date</span>}
@@ -102,7 +102,7 @@ const SearchForm = () => {
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className={`w-full h-12 justify-start text-left font-normal bg-muted/50 border-0 hover:bg-muted ${!checkIn ? 'text-muted-foreground cursor-not-allowed' : ''}`}
+                  className={`w-full h-12 justify-start text-left font-normal bg-muted/50 border-0 hover:bg-muted text-base ${!checkIn ? 'text-muted-foreground cursor-not-allowed' : ''}`}
                   disabled={!checkIn}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
@@ -138,7 +138,7 @@ const SearchForm = () => {
                   min="1"
                   value={guests}
                   onChange={(e) => setGuests(e.target.value)}
-                  className="h-12 pr-10 bg-muted/50 border-0 focus:ring-1 focus:ring-primary/20"
+                  className="h-12 pr-10 bg-muted/50 border-0 focus:ring-1 focus:ring-primary/20 text-base"
                 />
                 <Users className="absolute right-3 top-3.5 h-5 w-5 text-muted-foreground/50" />
               </div>
