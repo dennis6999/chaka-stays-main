@@ -6,7 +6,6 @@ import ScrollToTop from './components/ScrollToTop';
 import Index from "./pages/Index";
 import Properties from "./pages/Properties";
 import PropertyDetail from "./pages/PropertyDetail";
-import ListProperty from "./pages/ListProperty";
 import Auth from "./pages/Auth";
 import SignUp from "./pages/SignUp";
 import Dashboard from "./pages/Dashboard";
@@ -31,7 +30,6 @@ const App: React.FC = () => {
               <Route path="/" element={<Index />} />
               <Route path="/properties" element={<Properties />} />
               <Route path="/property/:id" element={<PropertyDetail />} />
-              <Route path="/list-property" element={<ListProperty />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/signup" element={<SignUp />} />
               <Route path="/dashboard" element={<Dashboard />} />

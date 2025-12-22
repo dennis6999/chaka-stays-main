@@ -25,6 +25,20 @@ import { api, Property, Booking } from '../services/api';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  AreaChart,
+  Area
+} from 'recharts';
+import { TrendingUp, DollarSign } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const { user, loading, logout, refreshUser } = useAuth();
@@ -38,7 +52,8 @@ const Dashboard: React.FC = () => {
     totalRevenue: 0,
     totalSpent: 0,
     totalTrips: 0,
-    totalHostingBookings: 0
+    totalHostingBookings: 0,
+    monthlyStats: [] as { name: string; revenue: number; bookings: number }[]
   });
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -97,6 +112,7 @@ const Dashboard: React.FC = () => {
       let hostingRevenue = 0;
       let totalHostingBookings = 0;
       let hostProperties: Property[] = [];
+      let monthlyData: Record<string, { revenue: number; bookings: number }> = {};
 
       try {
         hostProperties = await api.getHostProperties(user.id);
@@ -106,10 +122,38 @@ const Dashboard: React.FC = () => {
           const hostBookings = await api.getHostBookings(user.id);
           totalHostingBookings = hostBookings.length;
           hostingRevenue = hostBookings.reduce((sum, b) => sum + b.total_price, 0);
+
+          // Calculate Monthly Stats
+          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+          // Initialize last 6 months
+          for (let i = 5; i >= 0; i--) {
+            const d = new Date();
+            d.setMonth(d.getMonth() - i);
+            const key = `${months[d.getMonth()]}`;
+            monthlyData[key] = { revenue: 0, bookings: 0 };
+          }
+
+          hostBookings.forEach(booking => {
+            const date = new Date(booking.created_at);
+            const monthName = months[date.getMonth()];
+            // Simplified: Just matching by month name for now. Ideally match year too.
+            if (monthlyData[monthName]) {
+              monthlyData[monthName].revenue += booking.total_price;
+              monthlyData[monthName].bookings += 1;
+            }
+          });
         }
       } catch (err) {
         console.error("Error fetching host data", err);
       }
+
+      // Convert to array
+      const monthlyStats = Object.entries(monthlyData).map(([name, data]) => ({
+        name,
+        revenue: data.revenue,
+        bookings: data.bookings
+      }));
 
       // --- Favorites ---
       try {
@@ -120,12 +164,13 @@ const Dashboard: React.FC = () => {
       }
 
       setAnalytics({
-        bookingGrowth: 0, // Simplified for now
+        bookingGrowth: 0,
         revenueGrowth: 0,
-        totalRevenue: hostingRevenue, // This is now REAL revenue
+        totalRevenue: hostingRevenue,
         totalSpent: totalSpent,
         totalTrips: myTrips.length,
-        totalHostingBookings
+        totalHostingBookings,
+        monthlyStats
       });
 
       if (activeTab === 'properties') {
@@ -389,30 +434,28 @@ const Dashboard: React.FC = () => {
               {/* Host Stats - Only show if they have properties */}
               {properties.length > 0 && (
                 <div>
-                  <h3 className="text-lg font-serif font-bold mb-4 mt-2">Hosting Stats</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <h3 className="text-lg font-serif font-bold mb-4 mt-8">Hosting Analytics</h3>
+
+                  {/* Stats Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <Card className="bg-card border-border shadow-sm hover:shadow-md transition-all">
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium text-muted-foreground">Active Listings</CardTitle>
                         <Home className="h-4 w-4 text-secondary" />
                       </CardHeader>
                       <CardContent>
-                        <div className="text-3xl font-bold font-serif">
-                          {properties.length}
-                        </div>
+                        <div className="text-3xl font-bold font-serif">{properties.length}</div>
                         <p className="text-xs text-muted-foreground mt-1">Properties listed</p>
                       </CardContent>
                     </Card>
                     <Card className="bg-card border-border shadow-sm hover:shadow-md transition-all">
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">My Guests</CardTitle>
+                        <CardTitle className="text-sm font-medium text-muted-foreground">Total Guests</CardTitle>
                         <User className="h-4 w-4 text-primary" />
                       </CardHeader>
                       <CardContent>
-                        <div className="text-3xl font-bold font-serif">
-                          {analytics.totalHostingBookings}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">Total bookings received</p>
+                        <div className="text-3xl font-bold font-serif">{analytics.totalHostingBookings}</div>
+                        <p className="text-xs text-muted-foreground mt-1">Bookings received</p>
                       </CardContent>
                     </Card>
                     <Card className="bg-card border-border shadow-sm hover:shadow-md transition-all">
@@ -426,6 +469,99 @@ const Dashboard: React.FC = () => {
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">Lifetime earnings</p>
                       </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Charts Section */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    <Card className="p-6">
+                      <div className="flex items-center justify-between mb-6">
+                        <div>
+                          <h4 className="font-semibold text-lg">Revenue Overview</h4>
+                          <p className="text-sm text-muted-foreground">Monthly earnings from all properties</p>
+                        </div>
+                        <div className="p-2 bg-green-100 rounded-full">
+                          <TrendingUp className="h-5 w-5 text-green-700" />
+                        </div>
+                      </div>
+                      <div className="h-[300px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={analytics.monthlyStats}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                            <XAxis
+                              dataKey="name"
+                              axisLine={false}
+                              tickLine={false}
+                              tick={{ fontSize: 12, fill: '#6B7280' }}
+                              dy={10}
+                            />
+                            <YAxis
+                              axisLine={false}
+                              tickLine={false}
+                              tick={{ fontSize: 12, fill: '#6B7280' }}
+                              tickFormatter={(value) => `K${value / 1000}k`}
+                            />
+                            <Tooltip
+                              cursor={{ fill: 'transparent' }}
+                              contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                              formatter={(value: number) => [`KES ${value.toLocaleString()}`, 'Revenue']}
+                            />
+                            <Bar
+                              dataKey="revenue"
+                              fill="#0ea5e9"
+                              radius={[4, 4, 0, 0]}
+                              barSize={32}
+                            />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </Card>
+
+                    <Card className="p-6">
+                      <div className="flex items-center justify-between mb-6">
+                        <div>
+                          <h4 className="font-semibold text-lg">Booking Trends</h4>
+                          <p className="text-sm text-muted-foreground">Number of reservations per month</p>
+                        </div>
+                        <div className="p-2 bg-blue-100 rounded-full">
+                          <User className="h-5 w-5 text-blue-700" />
+                        </div>
+                      </div>
+                      <div className="h-[300px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={analytics.monthlyStats}>
+                            <defs>
+                              <linearGradient id="colorBookings" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.1} />
+                                <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                            <XAxis
+                              dataKey="name"
+                              axisLine={false}
+                              tickLine={false}
+                              tick={{ fontSize: 12, fill: '#6B7280' }}
+                              dy={10}
+                            />
+                            <YAxis
+                              axisLine={false}
+                              tickLine={false}
+                              tick={{ fontSize: 12, fill: '#6B7280' }}
+                            />
+                            <Tooltip
+                              contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                            />
+                            <Area
+                              type="monotone"
+                              dataKey="bookings"
+                              stroke="#0ea5e9"
+                              strokeWidth={3}
+                              fill="url(#colorBookings)"
+                            />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </div>
                     </Card>
                   </div>
                 </div>
