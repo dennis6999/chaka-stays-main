@@ -11,6 +11,14 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const AdminDashboard: React.FC = () => {
     const { user, logout } = useAuth();
@@ -19,7 +27,8 @@ const AdminDashboard: React.FC = () => {
     const [stats, setStats] = useState({ users: 0, properties: 0, bookings: 0, revenue: 0 });
     const [usersList, setUsersList] = useState<any[]>([]);
     const [propertiesList, setPropertiesList] = useState<Property[]>([]);
-    const [activeTab, setActiveTab] = useState('overview');
+    const [activeView, setActiveView] = useState<'overview' | 'users' | 'properties'>('overview');
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     useEffect(() => {
         fetchAdminData();
@@ -37,7 +46,6 @@ const AdminDashboard: React.FC = () => {
             setStats(adminStats);
             setUsersList(allUsers || []);
             setPropertiesList(allProperties || []);
-
         } catch (error: any) {
             console.error("Admin Load Error", error);
             const msg = error?.message || "Unknown error";
@@ -48,19 +56,34 @@ const AdminDashboard: React.FC = () => {
     };
 
     const handleDeleteProperty = async (id: string, title: string) => {
-        if (!confirm(`Are you sure you want to delete "${title}"? This cannot be undone.`)) return;
+        if (!confirm(`PERMANENT DELETE: Are you sure you want to delete "${title}"? This cannot be undone.`)) return;
 
         try {
             await api.deleteProperty(id);
             setPropertiesList(prev => prev.filter(p => p.id !== id));
-            toast.success("Property deleted via Admin Override");
-            // Refresh stats
-            const adminStats = await api.getAdminStats();
-            setStats(adminStats);
-        } catch (error) {
-            console.error("Delete failed", error);
-            toast.error("Failed to delete property. Check database permissions.");
+            toast.success("Property permanently deleted");
+            refreshStats();
+        } catch (error: any) {
+            toast.error(`Delete failed: ${error.message}`);
         }
+    };
+
+    const handleToggleBan = async (id: string, currentStatus: boolean, title: string) => {
+        const action = currentStatus ? "Unban" : "Ban";
+        if (!confirm(`${action} Property: Are you sure you want to ${action.toLowerCase()} "${title}"?`)) return;
+
+        try {
+            await api.toggleBanProperty(id, !currentStatus);
+            setPropertiesList(prev => prev.map(p => p.id === id ? { ...p, is_banned: !currentStatus } : p));
+            toast.success(`Property ${action.toLowerCase()}ned successfully`);
+        } catch (error: any) {
+            toast.error(`${action} failed: ${error.message}`);
+        }
+    };
+
+    const refreshStats = async () => {
+        const adminStats = await api.getAdminStats();
+        setStats(adminStats);
     };
 
     const handleLogout = () => {
@@ -68,174 +91,252 @@ const AdminDashboard: React.FC = () => {
         navigate('/');
     };
 
-    if (isLoading) {
-        return (
-            <div className="flex items-center justify-center min-h-screen bg-neutral/5">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    // --- Components ---
+
+    const SidebarContent = () => (
+        <div className="flex flex-col h-full bg-slate-900 text-slate-300">
+            <div className="p-6 flex items-center gap-3 text-white border-b border-white/10">
+                <ShieldAlert className="h-6 w-6 text-red-500" />
+                <span className="font-serif font-bold text-xl tracking-wide">Chaka Admin</span>
             </div>
-        );
+
+            <div className="flex-1 py-6 space-y-1 px-3">
+                <button
+                    onClick={() => { setActiveView('overview'); setIsMobileMenuOpen(false); }}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${activeView === 'overview' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/50' : 'hover:bg-white/5'}`}
+                >
+                    <TrendingUp className="h-5 w-5" />
+                    <span className="font-medium">Overview</span>
+                </button>
+                <button
+                    onClick={() => { setActiveView('users'); setIsMobileMenuOpen(false); }}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${activeView === 'users' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/50' : 'hover:bg-white/5'}`}
+                >
+                    <Users className="h-5 w-5" />
+                    <span className="font-medium">Users Management</span>
+                </button>
+                <button
+                    onClick={() => { setActiveView('properties'); setIsMobileMenuOpen(false); }}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${activeView === 'properties' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/50' : 'hover:bg-white/5'}`}
+                >
+                    <Home className="h-5 w-5" />
+                    <span className="font-medium">Properties</span>
+                </button>
+            </div>
+
+            <div className="p-4 border-t border-white/10 space-y-2">
+                <Button variant="ghost" className="w-full justify-start text-slate-400 hover:text-white hover:bg-white/5" onClick={() => navigate('/')}>
+                    <TrendingUp className="h-4 w-4 mr-2" /> View Live Site
+                </Button>
+                <Button variant="ghost" className="w-full justify-start text-red-400 hover:text-red-300 hover:bg-red-500/10" onClick={handleLogout}>
+                    <LogOut className="h-4 w-4 mr-2" /> Sign Out
+                </Button>
+            </div>
+        </div>
+    );
+
+    const StatCard = ({ title, value, icon: Icon, colorClass, trend }: any) => (
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-neutral/10 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-4">
+                <span className="text-sm font-medium text-muted-foreground">{title}</span>
+                <div className={`p-2 rounded-lg ${colorClass} bg-opacity-10`}>
+                    <Icon className={`h-5 w-5 ${colorClass.replace('bg-', 'text-')}`} />
+                </div>
+            </div>
+            <div className="text-3xl font-bold text-slate-900">{value}</div>
+            {trend && <div className="text-xs text-green-600 mt-2 font-medium">{trend}</div>}
+        </div>
+    );
+
+    if (isLoading) {
+        return <div className="min-h-screen flex items-center justify-center bg-slate-50"><div className="animate-pulse text-indigo-600 font-bold text-lg">Loading Admin Suite...</div></div>;
     }
 
     return (
-        <div className="min-h-screen flex flex-col bg-background">
-            {/* Custom Admin Header */}
-            <header className="bg-white border-b border-border sticky top-0 z-50">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <ShieldAlert className="h-6 w-6 text-red-600" />
-                        <span className="font-serif font-bold text-xl tracking-tight">Chaka Stays Admin</span>
-                        <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 ml-2">Super User</Badge>
-                    </div>
-                    <div className="flex items-center gap-4">
-                        <span className="text-sm text-muted-foreground hidden md:inline-block">
-                            Logged in as {user?.email}
-                        </span>
-                        <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
-                            View Site
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={handleLogout} className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                            <LogOut className="h-4 w-4 mr-2" /> Exit
-                        </Button>
-                    </div>
+        <div className="min-h-screen bg-slate-50 flex font-sans">
+            {/* Desktop Sidebar */}
+            <div className="hidden md:block w-64 fixed inset-y-0 z-50 shadow-xl">
+                <SidebarContent />
+            </div>
+
+            {/* Mobile Sidebar */}
+            <div className="md:hidden fixed top-0 w-full z-50 bg-slate-900 text-white p-4 flex justify-between items-center shadow-md">
+                <div className="flex items-center gap-2">
+                    <ShieldAlert className="h-5 w-5 text-red-500" />
+                    <span className="font-bold">Admin</span>
                 </div>
-            </header>
+                <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+                    <SheetTrigger><Menu className="h-6 w-6" /></SheetTrigger>
+                    <SheetContent side="left" className="p-0 border-r-0 bg-slate-900 w-64 text-white">
+                        <SidebarContent />
+                    </SheetContent>
+                </Sheet>
+            </div>
 
-            <div className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                    <TabsList className="bg-neutral/10 p-1">
-                        <TabsTrigger value="overview">Overview</TabsTrigger>
-                        <TabsTrigger value="users">Users ({usersList.length})</TabsTrigger>
-                        <TabsTrigger value="properties">Properties ({propertiesList.length})</TabsTrigger>
-                    </TabsList>
+            {/* Main Content */}
+            <main className="flex-1 md:ml-64 p-4 md:p-8 pt-20 md:pt-8 overflow-y-auto h-screen">
+                <div className="max-w-7xl mx-auto space-y-8 animate-fade-in">
 
-                    {/* Overview Tab */}
-                    <TabsContent value="overview" className="space-y-6 animate-fade-in">
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                            <Card>
-                                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                    <CardTitle className="text-sm font-medium text-muted-foreground">Total Users</CardTitle>
-                                    <Users className="h-4 w-4 text-blue-500" />
-                                </CardHeader>
-                                <CardContent><div className="text-2xl font-bold">{stats.users}</div></CardContent>
-                            </Card>
-                            <Card>
-                                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                    <CardTitle className="text-sm font-medium text-muted-foreground">Properties</CardTitle>
-                                    <Home className="h-4 w-4 text-green-500" />
-                                </CardHeader>
-                                <CardContent><div className="text-2xl font-bold">{stats.properties}</div></CardContent>
-                            </Card>
-                            <Card>
-                                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                    <CardTitle className="text-sm font-medium text-muted-foreground">Bookings</CardTitle>
-                                    <Calendar className="h-4 w-4 text-purple-500" />
-                                </CardHeader>
-                                <CardContent><div className="text-2xl font-bold">{stats.bookings}</div></CardContent>
-                            </Card>
-                            <Card>
-                                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                    <CardTitle className="text-sm font-medium text-muted-foreground">Revenue</CardTitle>
-                                    <TrendingUp className="h-4 w-4 text-amber-500" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold text-green-600">KES {stats.revenue.toLocaleString()}</div>
-                                </CardContent>
-                            </Card>
+                    {/* Header */}
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <h1 className="text-2xl font-bold text-slate-900">
+                                {activeView === 'overview' && 'Dashboard Overview'}
+                                {activeView === 'users' && 'User Management'}
+                                {activeView === 'properties' && 'Property Listings'}
+                            </h1>
+                            <p className="text-slate-500 text-sm mt-1">Welcome back, {user?.full_name || 'Admin'}</p>
                         </div>
-                    </TabsContent>
+                        <div className="flex items-center gap-3">
+                            <span className="text-xs font-mono bg-white px-3 py-1 rounded-full border shadow-sm text-slate-500">
+                                v1.2.0-stable
+                            </span>
+                        </div>
+                    </div>
 
-                    {/* Users Tab */}
-                    <TabsContent value="users" className="animate-fade-in">
-                        <Card>
-                            <CardHeader><CardTitle>Registered Users</CardTitle></CardHeader>
-                            <CardContent>
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-sm text-left">
-                                        <thead className="text-xs uppercase bg-muted/50 text-muted-foreground">
-                                            <tr>
-                                                <th className="px-6 py-3">User</th>
-                                                <th className="px-6 py-3">Contact</th>
-                                                <th className="px-6 py-3">Role</th>
-                                                <th className="px-6 py-3">Joined</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-border">
-                                            {usersList.map((u) => (
-                                                <tr key={u.id} className="bg-card hover:bg-muted/50">
-                                                    <td className="px-6 py-4 flex items-center gap-3">
-                                                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary">
-                                                            {u.full_name?.charAt(0) || '?'}
-                                                        </div>
-                                                        <div>
-                                                            <div className="font-medium">{u.full_name || 'No Name'}</div>
-                                                            <div className="text-xs text-muted-foreground">{u.email}</div>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4">{u.phone || '-'}</td>
-                                                    <td className="px-6 py-4">
-                                                        {u.is_admin ?
-                                                            <Badge variant="destructive" className="bg-red-100 text-red-800 hover:bg-red-100 border-none">Admin</Badge> :
-                                                            <Badge variant="outline">{u.role || 'Guest'}</Badge>
-                                                        }
-                                                    </td>
-                                                    <td className="px-6 py-4 text-muted-foreground">
-                                                        {new Date(u.created_at).toLocaleDateString()}
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
+                    {/* Views */}
+                    {activeView === 'overview' && (
+                        <div className="space-y-8">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                                <StatCard title="Total Revenue" value={`KES ${stats.revenue.toLocaleString()}`} icon={TrendingUp} colorClass="bg-green-500 text-green-600" trend="+12.5% vs last month" />
+                                <StatCard title="Active Users" value={stats.users} icon={Users} colorClass="bg-blue-500 text-blue-600" trend="+8 new this week" />
+                                <StatCard title="Total Bookings" value={stats.bookings} icon={Calendar} colorClass="bg-purple-500 text-purple-600" />
+                                <StatCard title="Properties" value={stats.properties} icon={Home} colorClass="bg-amber-500 text-amber-600" />
+                            </div>
+                        </div>
+                    )}
 
-                    {/* Properties Tab */}
-                    <TabsContent value="properties" className="animate-fade-in">
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between">
-                                <CardTitle>All Properties</CardTitle>
-                                <div className="relative w-64">
-                                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                                    <Input placeholder="Search properties..." className="pl-8" />
+                    {activeView === 'users' && (
+                        <Card className="border-0 shadow-lg overflow-hidden">
+                            <CardHeader className="bg-white border-b px-6 py-4">
+                                <div className="flex justify-between items-center">
+                                    <CardTitle>Registered Users</CardTitle>
+                                    <div className="flex gap-2">
+                                        <Button variant="outline" size="sm">Export CSV</Button>
+                                    </div>
                                 </div>
                             </CardHeader>
-                            <CardContent>
-                                <div className="space-y-4">
-                                    {propertiesList.map((property) => (
-                                        <div key={property.id} className="flex flex-col md:flex-row items-center border rounded-lg p-4 gap-4 hover:bg-muted/30 transition-colors">
-                                            <img
-                                                src={property.images?.[0] || 'https://via.placeholder.com/150'}
-                                                alt={property.title}
-                                                className="w-full md:w-32 h-20 object-cover rounded-md"
-                                            />
-                                            <div className="flex-1 text-center md:text-left">
-                                                <h4 className="font-bold font-serif">{property.title}</h4>
-                                                <div className="flex items-center justify-center md:justify-start gap-2 text-sm text-muted-foreground mt-1">
-                                                    <MapPin className="h-3 w-3" /> {property.location}
-                                                </div>
-                                                <div className="text-sm mt-1">
-                                                    Hosted by <span className="font-medium text-foreground">{(property as any).host_id}</span>
-                                                </div>
+                            <CardContent className="p-0">
+                                <table className="w-full text-sm text-left">
+                                    <thead className="text-xs uppercase bg-slate-50 text-slate-500 font-medium border-b">
+                                        <tr>
+                                            <th className="px-6 py-4">User Identity</th>
+                                            <th className="px-6 py-4">Contact</th>
+                                            <th className="px-6 py-4">Role</th>
+                                            <th className="px-6 py-4">Status</th>
+                                            <th className="px-6 py-4 text-right">Joined</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {usersList.map((u) => (
+                                            <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="h-9 w-9 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">
+                                                            {u.full_name?.charAt(0) || '?'}
+                                                        </div>
+                                                        <div className="font-medium text-slate-900">{u.full_name || 'No Name'}</div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 text-slate-500">{u.email}</td>
+                                                <td className="px-6 py-4">
+                                                    {u.is_admin ?
+                                                        <Badge variant="secondary" className="bg-purple-100 text-purple-700 hover:bg-purple-200">Admin</Badge> :
+                                                        <Badge variant="outline" className="text-slate-600">Guest</Badge>
+                                                    }
+                                                </td>
+                                                <td className="px-6 py-4"><span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">Active</span></td>
+                                                <td className="px-6 py-4 text-right text-slate-500 font-mono text-xs">{new Date(u.created_at).toLocaleDateString()}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {activeView === 'properties' && (
+                        <div className="space-y-6">
+                            <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border">
+                                <div className="relative w-72">
+                                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                                    <Input placeholder="Search properties..." className="pl-9 bg-slate-50 border-slate-200" />
+                                </div>
+                                <div className="flex gap-2">
+                                    <Button variant="outline" size="sm">Filter</Button>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-4">
+                                {propertiesList.map((property) => (
+                                    <div key={property.id} className={`bg-white border rounded-xl p-4 shadow-sm flex flex-col md:flex-row gap-6 transition-all ${property.is_banned ? 'border-red-200 bg-red-50/10' : 'hover:border-indigo-200'}`}>
+                                        <img
+                                            src={property.images?.[0]}
+                                            className={`w-full md:w-48 h-32 object-cover rounded-lg ${property.is_banned ? 'grayscale opacity-70' : ''}`}
+                                            alt="Property"
+                                        />
+
+                                        <div className="flex-1 flex flex-col justify-center">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <h3 className="font-bold text-lg text-slate-900">{property.title}</h3>
+                                                {property.is_banned && <Badge variant="destructive" className="animate-pulse">BANNED</Badge>}
                                             </div>
-                                            <div className="flex flex-col items-end gap-2">
-                                                <div className="font-bold text-lg">KES {property.price_per_night}</div>
+                                            <div className="flex items-center text-slate-500 text-sm mb-3">
+                                                <MapPin className="h-3 w-3 mr-1" /> {property.location}
+                                                <span className="mx-2">•</span>
+                                                <span className="font-medium text-slate-900">KES {property.price_per_night}</span>
+                                                <span className="text-slate-400 text-xs ml-1">/ night</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-xs text-slate-400">
+                                                <span className="bg-slate-100 px-2 py-1 rounded">ID: {property.id.substring(0, 8)}...</span>
+                                                <span>Hosted by {property.host?.full_name || '...'}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex md:flex-col justify-end gap-2 border-t md:border-t-0 md:border-l border-slate-100 pt-4 md:pt-0 md:pl-6">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 md:hidden ml-auto">
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onClick={() => handleToggleBan(property.id, !!property.is_banned, property.title)}>
+                                                        {property.is_banned ? 'Unban Property' : 'Ban Property'}
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteProperty(property.id, property.title)}>
+                                                        Delete Permanently
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+
+                                            <div className="hidden md:flex flex-col gap-2 min-w-[140px]">
                                                 <Button
-                                                    variant="destructive"
                                                     size="sm"
+                                                    variant={property.is_banned ? "default" : "outline"}
+                                                    className={property.is_banned ? "bg-green-600 hover:bg-green-700 border-none" : "hover:bg-amber-50 text-amber-700 border-amber-200"}
+                                                    onClick={() => handleToggleBan(property.id, !!property.is_banned, property.title)}
+                                                >
+                                                    {property.is_banned ? <><CheckCircle className="h-4 w-4 mr-2" /> Unban</> : <><Ban className="h-4 w-4 mr-2" /> Ban Property</>}
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
                                                     onClick={() => handleDeleteProperty(property.id, property.title)}
                                                 >
-                                                    <Trash2 className="h-4 w-4 mr-2" /> Ban / Delete
+                                                    <Trash2 className="h-4 w-4 mr-2" /> Delete
                                                 </Button>
                                             </div>
                                         </div>
-                                    ))}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                </Tabs>
-            </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </main>
         </div>
     );
 };
