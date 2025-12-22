@@ -183,7 +183,7 @@ export const api = {
             .eq('property_id', propertyId)
             .neq('status', 'cancelled') // Ignore cancelled bookings
             // Only future or current bookings matter for availability
-            .gte('check_out', new Date().toISOString());
+            .gte('check_out', new Date().toISOString().split('T')[0]);
 
         if (error) throw error;
         return data as { check_in: string; check_out: string }[];

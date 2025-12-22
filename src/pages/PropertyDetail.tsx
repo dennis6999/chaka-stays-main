@@ -100,18 +100,19 @@ const PropertyDetail = () => {
       const bookings = await api.getPropertyBookings(id);
       const disabled: Date[] = [];
       bookings.forEach(booking => {
-        const start = new Date(booking.check_in);
-        const end = new Date(booking.check_out);
-        // Iterate from start to end (inclusive of start, exclusive of end for checkout logic usually, 
-        // but for disabling selection, we might want to disable the night)
-        // Let's disable all days in the range. 
+        // Parse dates as local time to avoid timezone offsets shifting the day
+        const [startYear, startMonth, startDay] = booking.check_in.split('-').map(Number);
+        const [endYear, endMonth, endDay] = booking.check_out.split('-').map(Number);
+
+        const start = new Date(startYear, startMonth - 1, startDay);
+        const end = new Date(endYear, endMonth - 1, endDay);
+
+        // Iterate from start to end (inclusive of start, exclusive of end)
         let current = new Date(start);
         while (current < end) {
           disabled.push(new Date(current));
           current.setDate(current.getDate() + 1);
         }
-        // Depending on policy, checkout day might be available for checkin. 
-        // If so, we don't disable 'end'. 
       });
       setDisabledDates(disabled);
     } catch (error) {
