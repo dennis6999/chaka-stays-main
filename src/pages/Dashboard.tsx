@@ -917,6 +917,72 @@ const Dashboard: React.FC = () => {
               )}
             </TabsContent>
 
+            {/* Favorites Tab */}
+            <TabsContent value="favorites" className="animate-fade-in">
+              {isLoading ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : favorites.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed border-border rounded-xl bg-neutral/5">
+                  <div className="h-16 w-16 bg-neutral/10 rounded-full flex items-center justify-center mb-4">
+                    <Heart className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-xl font-serif font-bold mb-2">No favorites yet</h3>
+                  <p className="text-muted-foreground max-w-sm mx-auto mb-6">
+                    Start exploring and save your dream stays here for quick access.
+                  </p>
+                  <Button onClick={() => navigate('/properties')} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                    Explore Properties
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {favorites.map((property) => (
+                    <Card key={property.id} className="group bg-card border-border overflow-hidden hover:shadow-xl transition-all duration-300">
+                      <div className="relative h-48 overflow-hidden">
+                        <img
+                          src={property.images?.[0] || 'https://via.placeholder.com/300x200'}
+                          alt={property.title}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                        <button
+                          className="absolute top-2 right-2 p-2 bg-white/90 rounded-full shadow-sm hover:scale-110 transition-transform"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                              await api.removeFavorite(property.id, user.id);
+                              setFavorites(favorites.filter(f => f.id !== property.id));
+                              toast.success('Removed from favorites');
+                            } catch (error) {
+                              toast.error('Failed to remove');
+                            }
+                          }}
+                        >
+                          <Heart className="h-4 w-4 fill-red-500 text-red-500" />
+                        </button>
+                      </div>
+                      <CardContent className="p-5">
+                        <h3 className="font-serif font-bold text-xl mb-1">{property.title}</h3>
+                        <p className="text-sm text-muted-foreground mb-4 flex items-center">
+                          <MapPin className="h-3 w-3 mr-1" /> {property.location}
+                        </p>
+                        <div className="flex justify-between items-end">
+                          <div>
+                            <span className="text-lg font-bold text-primary">KES {property.price_per_night}</span>
+                            <span className="text-xs text-muted-foreground">/night</span>
+                          </div>
+                          <Button variant="outline" size="sm" onClick={() => navigate(`/property/${property.id}`)}>
+                            View Details
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
             {/* Profile Tab */}
             <TabsContent value="profile" className="animate-fade-in">
               <div className="max-w-3xl">
