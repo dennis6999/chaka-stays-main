@@ -362,5 +362,46 @@ export const api = {
         if (error) throw error;
         // Map to return just the property objects
         return data.map(f => f.property) as unknown as Property[];
+    },
+
+    // --- Admin ---
+
+    async isAdmin(userId: string) {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('is_admin')
+            .eq('id', userId)
+            .single();
+        
+        if (error) return false;
+        return data?.is_admin || false;
+    },
+
+    async getAdminStats() {
+        // Fetch specific counts using count: 'exact'
+        const { count: userCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
+        const { count: propertyCount } = await supabase.from('properties').select('*', { count: 'exact', head: true });
+        const { count: bookingCount } = await supabase.from('bookings').select('*', { count: 'exact', head: true });
+        
+        // Simple aggregate for revenue (might be slow on large DBs, but fine for MVP)
+        const { data: bookings } = await supabase.from('bookings').select('total_price').neq('status', 'cancelled');
+        const totalRevenue = bookings?.reduce((sum, b) => sum + (b.total_price || 0), 0) || 0;
+
+        return {
+            users: userCount || 0,
+            properties: propertyCount || 0,
+            bookings: bookingCount || 0,
+            revenue: totalRevenue
+        };
+    },
+
+    async getAllUsers() {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        return data;
     }
 };
