@@ -299,7 +299,7 @@ const Properties = () => {
       <div className="chaka-container px-4 sm:px-6 py-8 flex-grow">
 
         {/* Top Filter Bar - Replaces Sidebar */}
-        <div className="sticky top-20 z-30 bg-background/95 backdrop-blur-xl border-b border-border/40 -mx-6 px-6 py-4 mb-8 flex flex-col gap-4 md:flex-row md:items-center justify-between transition-all duration-300 shadow-sm">
+        <div className="sticky top-[72px] z-30 bg-background/95 backdrop-blur-xl border-b border-border/40 -mx-6 px-6 py-4 mb-8 flex flex-col gap-4 md:flex-row md:items-center justify-between transition-all duration-300 shadow-sm">
 
           {/* Left: Filter Buttons */}
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 md:pb-0">
