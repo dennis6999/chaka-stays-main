@@ -197,7 +197,7 @@ const Navbar = () => {
                   <div className="mt-auto">
                     <SheetClose asChild>
                       <Button asChild variant="outline" className="w-full border-primary/20 text-primary hover:text-primary hover:bg-primary/5">
-                        <Link to="/list-property">Host a Property</Link>
+                        <Link to={user ? "/dashboard" : "/auth"}>Host a Property</Link>
                       </Button>
                     </SheetClose>
                   </div>

@@ -4,7 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { MapPin, Home, User } from 'lucide-react';
 
+import { useAuth } from '@/contexts/AuthContext';
+
 const CallToAction = () => {
+  const { user } = useAuth();
   return (
     <section className="py-24 bg-stone-900 text-white relative overflow-hidden">
       {/* Background pattern */}
@@ -48,7 +51,7 @@ const CallToAction = () => {
             <h3 className="text-2xl font-serif font-semibold mb-3">List Your Property</h3>
             <p className="mb-8 text-white/60 leading-relaxed">Become a host and share your space with travelers from around the world. Join our growing community covering Chaka.</p>
             <Button asChild className="bg-secondary hover:bg-secondary/90 text-white w-full h-12 text-lg">
-              <Link to="/list-property">Start Hosting</Link>
+              <Link to={user ? "/dashboard" : "/auth"}>Start Hosting</Link>
             </Button>
           </div>
 

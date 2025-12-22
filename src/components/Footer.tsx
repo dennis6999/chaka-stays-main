@@ -3,7 +3,10 @@ import { Link } from 'react-router-dom';
 import { Home, MapPin, Mail, Phone, Facebook, Twitter, Instagram } from 'lucide-react';
 import { Button } from './ui/button';
 
+import { useAuth } from '@/contexts/AuthContext';
+
 const Footer = () => {
+  const { user } = useAuth();
   return (
     <footer className="bg-[#1A2F25] text-white/80 border-t border-white/5 font-sans">
       {/* Newsletter Section - Integrated but distinct */}
@@ -69,7 +72,7 @@ const Footer = () => {
                 <li><Link to="/" className="hover:text-white transition-colors">Home</Link></li>
                 <li><Link to="/properties" className="hover:text-white transition-colors">Stays</Link></li>
                 <li><Link to="/about" className="hover:text-white transition-colors">Our Story</Link></li>
-                <li><Link to="/list-property" className="hover:text-white transition-colors">Host a Property</Link></li>
+                <li><Link to={user ? "/dashboard" : "/auth"} className="hover:text-white transition-colors">Host a Property</Link></li>
               </ul>
             </div>
 

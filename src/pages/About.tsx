@@ -5,7 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { MapPin, Users, Home, Star, Heart, Globe, Award, Coffee, ArrowRight, ShieldCheck, Leaf } from 'lucide-react';
 
+import { useAuth } from '@/contexts/AuthContext';
+
 const About = () => {
+  const { user } = useAuth();
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -132,7 +135,7 @@ const About = () => {
                 <Link to="/properties">Find Your Stay</Link>
               </Button>
               <Button asChild variant="outline" size="lg" className="h-14 px-8 rounded-full border-white/30 text-white hover:bg-white/10 hover:border-white text-lg font-medium backdrop-blur-sm">
-                <Link to="/list-property">Become a Host</Link>
+                <Link to={user ? "/dashboard" : "/auth"}>Become a Host</Link>
               </Button>
             </div>
           </div>
