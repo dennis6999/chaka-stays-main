@@ -36,9 +36,10 @@ const AdminDashboard: React.FC = () => {
             setUsersList(allUsers || []);
             setPropertiesList(allProperties || []);
 
-        } catch (error) {
+        } catch (error: any) {
             console.error("Admin Load Error", error);
-            toast.error("Failed to load admin data");
+            const msg = error?.message || "Unknown error";
+            toast.error(`Failed to load admin data: ${msg}`);
         } finally {
             setIsLoading(false);
         }
