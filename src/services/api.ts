@@ -382,7 +382,8 @@ export const api = {
 
         if (error) {
             console.error('Admin Stats RPC Error:', error);
-            // Fallback to client-side if RPC fails (e.g. function doesn't exist yet)
+            // SHOW THE USER why it failed
+            toast.error(`Admin Stats Error: ${error.message}`);
             return { users: 0, properties: 0, bookings: 0, revenue: 0 };
         }
 
