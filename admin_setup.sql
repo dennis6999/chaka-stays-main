@@ -23,9 +23,5 @@ USING (
   (SELECT is_admin FROM profiles WHERE id = auth.uid()) = TRUE
 );
 
--- RUN THIS COMMAND (Replace with your actual email):
-UPDATE profiles 
-SET is_admin = TRUE 
-WHERE id = (
-  SELECT id FROM auth.users WHERE email = 'YOUR_EMAIL@EXAMPLE.COM'
-);
+-- OPTIONAL: Set a specific user as admin (Replace with actual email if known, or run manually)
+-- UPDATE profiles SET is_admin = TRUE WHERE id = 'USER_ID_HERE';
