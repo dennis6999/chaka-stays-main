@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { AdminDashboardSkeleton } from '@/components/AdminDashboardSkeleton';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -182,7 +183,7 @@ const AdminDashboard: React.FC = () => {
     );
 
     if (isLoading) {
-        return <div className="min-h-screen flex items-center justify-center bg-slate-50"><div className="animate-pulse text-indigo-600 font-bold text-lg">Loading Admin Suite...</div></div>;
+        return <AdminDashboardSkeleton />;
     }
 
     return (
@@ -248,7 +249,7 @@ const AdminDashboard: React.FC = () => {
                                 {activeView === 'users' && 'User Management'}
                                 {activeView === 'properties' && 'Property Listings'}
                             </h1>
-                            <p className="text-slate-500 text-sm mt-1">Welcome back, {user?.full_name || 'Admin'}</p>
+                            <p className="text-slate-500 text-sm mt-1">Welcome back, {user?.name || 'Admin'}</p>
                         </div>
                         <div className="flex items-center gap-3">
                             <span className="text-xs font-mono bg-white px-3 py-1 rounded-full border shadow-sm text-slate-500">

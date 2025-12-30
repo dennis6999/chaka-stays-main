@@ -1,5 +1,6 @@
 import React from 'react';
 import PropertyCard from './PropertyCard';
+import { PropertyCardSkeleton } from '@/components/PropertyCardSkeleton';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 
@@ -43,8 +44,10 @@ const FeaturedProperties = () => {
         </div>
 
         {isLoading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[1, 2, 3].map((i) => (
+              <PropertyCardSkeleton key={i} />
+            ))}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">

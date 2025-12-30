@@ -61,6 +61,7 @@ import { toast } from 'sonner';
 import { api, Property, Review } from '@/services/api';
 import ReviewForm from '@/components/ReviewForm';
 import SEO from '@/components/SEO';
+import { PropertyDetailSkeleton } from '@/components/PropertyDetailSkeleton';
 
 const PropertyDetail = () => {
   const { id } = useParams();
@@ -239,11 +240,7 @@ const PropertyDetail = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <PropertyDetailSkeleton />;
   }
 
   if (!property) {

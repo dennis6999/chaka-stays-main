@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import PropertyCard from '@/components/PropertyCard';
+import { PropertyCardSkeleton } from '@/components/PropertyCardSkeleton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -395,7 +396,7 @@ const Properties = () => {
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="h-[400px] rounded-xl bg-neutral/10 animate-pulse" />
+              <PropertyCardSkeleton key={i} />
             ))}
           </div>
         ) : filteredProperties.length > 0 ? (
