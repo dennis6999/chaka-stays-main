@@ -175,24 +175,38 @@ export const api = {
     },
 
     async getPropertyBookings(propertyId: string) {
-        const { data, error } = await supabase
+        // Fetch Bookings
+        const { data: bookings, error: bookingsError } = await supabase
             .from('bookings')
             .select('check_in, check_out')
             .eq('property_id', propertyId)
-            .neq('status', 'cancelled') // Ignore cancelled bookings
-            // Only future or current bookings matter for availability
+            .neq('status', 'cancelled')
             .gte('check_out', new Date().toISOString().split('T')[0]);
 
-        if (error) throw error;
-        return data as { check_in: string; check_out: string }[];
+        if (bookingsError) throw bookingsError;
+
+        // Fetch Blocked Dates
+        const { data: blocks, error: blocksError } = await supabase
+            .from('blocked_dates')
+            .select('start_date, end_date')
+            .eq('property_id', propertyId)
+            .gte('end_date', new Date().toISOString().split('T')[0]);
+
+        if (blocksError) throw blocksError;
+
+        // Normalize data structure
+        const bookingDates = (bookings || []).map(b => ({ check_in: b.check_in, check_out: b.check_out, type: 'booking' }));
+        const blockedDates = (blocks || []).map(b => ({ check_in: b.start_date, check_out: b.end_date, type: 'blocked' }));
+
+        return [...bookingDates, ...blockedDates];
     },
 
     async checkAvailability(propertyId: string, checkIn: Date, checkOut: Date) {
         const { data, error } = await supabase
             .rpc('check_availability', {
                 property_id: propertyId,
-                check_in_date: checkIn.toISOString(),
-                check_out_date: checkOut.toISOString()
+                check_in_date: checkIn.toISOString().split('T')[0],
+                check_out_date: checkOut.toISOString().split('T')[0]
             });
 
         if (error) throw error;
@@ -204,6 +218,43 @@ export const api = {
             .rpc('cancel_booking_secure', { booking_id: bookingId });
 
         if (error) throw error;
+    },
+
+    // --- Blocked Dates (Calendar) ---
+
+    async blockDates(block: { property_id: string; start_date: Date; end_date: Date; reason?: string }) {
+        const { data, error } = await supabase
+            .from('blocked_dates')
+            .insert({
+                property_id: block.property_id,
+                start_date: block.start_date.toISOString(),
+                end_date: block.end_date.toISOString(),
+                reason: block.reason
+            })
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    },
+
+    async removeBlock(blockId: string) {
+        const { error } = await supabase
+            .from('blocked_dates')
+            .delete()
+            .eq('id', blockId);
+
+        if (error) throw error;
+    },
+
+    async getBlockedDates(propertyId: string) {
+        const { data, error } = await supabase
+            .from('blocked_dates')
+            .select('*')
+            .eq('property_id', propertyId);
+
+        if (error) throw error;
+        return data as { id: string; start_date: string; end_date: string; reason?: string }[];
     },
 
     async createBooking(booking: {

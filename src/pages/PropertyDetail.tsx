@@ -233,7 +233,15 @@ const PropertyDetail = () => {
 
     } catch (error: any) {
       console.error('Error creating booking:', error);
-      toast.error(error.message || 'Failed to create booking');
+
+      // Friendly error handling
+      if (error.message?.includes('could not choose the best candidate function')) {
+        toast.error('System Update: Please refresh the page and try again (Availability Check Updated).');
+      } else if (error.message?.includes('violates row-level security')) {
+        toast.error('Unable to verify permissions. Please check your login status.');
+      } else {
+        toast.error(error.message || 'Failed to create booking. Please try again.');
+      }
     } finally {
       setIsBooking(false);
     }

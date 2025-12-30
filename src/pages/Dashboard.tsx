@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Calendar, Home, User, Plus, Edit, Trash, MapPin, Heart } from 'lucide-react';
+import { Loader2, Calendar, Home, User, Plus, Edit, Trash, MapPin, Heart, Wallet, DollarSign, TrendingUp } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import {
@@ -38,7 +39,8 @@ import {
   AreaChart,
   Area
 } from 'recharts';
-import { TrendingUp, DollarSign } from 'lucide-react';
+// Merged into top import
+import { ManageCalendarDialog } from '@/components/ManageCalendarDialog';
 
 const Dashboard: React.FC = () => {
   const { user, loading, logout, refreshUser } = useAuth();
@@ -80,6 +82,9 @@ const Dashboard: React.FC = () => {
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  // Calendar Dialog State
+  const [calendarProperty, setCalendarProperty] = useState<{ id: string, title: string } | null>(null);
 
   // Cancellation Dialog State
   const [bookingToCancel, setBookingToCancel] = useState<string | null>(null);
@@ -319,8 +324,63 @@ const Dashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="min-h-screen bg-slate-50 pb-20">
+        <Navbar />
+        <main className="container mx-auto px-4 py-8 pt-24">
+          <div className="mb-10">
+            <div className="h-48 w-full rounded-3xl overflow-hidden relative bg-slate-200">
+              <div className="absolute inset-0 bg-gradient-to-r from-slate-900 to-slate-800 opacity-90" />
+              <div className="absolute bottom-0 left-0 p-8 w-full">
+                <Skeleton className="h-10 w-96 bg-white/10 mb-2" />
+                <Skeleton className="h-5 w-64 bg-white/10" />
+                <div className="absolute bottom-8 right-8">
+                  <Skeleton className="h-10 w-32 rounded-full bg-white/20" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-8">
+            <div className="flex gap-8 border-b border-border pb-px">
+              <Skeleton className="h-10 w-24 bg-slate-200" />
+              <Skeleton className="h-10 w-24 bg-slate-200" />
+              <Skeleton className="h-10 w-24 bg-slate-200" />
+              <Skeleton className="h-10 w-24 bg-slate-200" />
+            </div>
+
+            <div className="space-y-10">
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <Skeleton className="h-8 w-48 bg-slate-200" />
+                  <Skeleton className="h-4 w-32 bg-slate-200" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm h-32 flex flex-col justify-between">
+                      <div className="flex justify-between">
+                        <Skeleton className="h-4 w-20 bg-slate-100" />
+                        <Skeleton className="h-4 w-4 rounded-full bg-slate-100" />
+                      </div>
+                      <Skeleton className="h-8 w-32 bg-slate-100" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm h-[350px]">
+                  <Skeleton className="h-6 w-48 mb-6 bg-slate-100" />
+                  <Skeleton className="h-64 w-full bg-slate-50 rounded-lg" />
+                </div>
+                <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm h-[350px]">
+                  <Skeleton className="h-6 w-48 mb-6 bg-slate-100" />
+                  <Skeleton className="h-64 w-full bg-slate-50 rounded-lg" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+        <Footer />
       </div>
     );
   }
@@ -328,342 +388,314 @@ const Dashboard: React.FC = () => {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-slate-50/50">
       <Navbar />
 
       <main className="flex-grow pt-24 pb-16">
         <div className="chaka-container">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-6">
-            <div>
-              <h1 className="text-3xl md:text-5xl font-serif font-bold text-foreground">Dashboard</h1>
-              <p className="text-muted-foreground mt-2">Welcome back, {user.name}!</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Button variant="outline" onClick={handleLogout} className="border-destructive/20 text-destructive hover:bg-destructive/10 hover:text-destructive">
-                Log out
-              </Button>
-              <Button onClick={() => {
-                setShowAddProperty(true);
-                setEditingId(null); // Ensure we are in create mode
-                setNewProperty({
-                  name: '',
-                  location: '',
-                  price: '',
-                  description: '',
-                  images: [],
-                  max_guests: '2',
-                  bedrooms: '1',
-                  beds: '1',
-                  baths: '1',
-                  amenities: [],
-                  property_type: 'Stays'
-                });
-                setActiveTab('properties');
-              }} className="bg-primary hover:bg-primary/90">
-                <Plus className="h-4 w-4 mr-2" /> New Listing
-              </Button>
+          {/* Header / Welcome Section */}
+          <div className="relative overflow-hidden rounded-3xl bg-slate-900 text-white p-8 md:p-12 mb-10 shadow-xl">
+            <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/3 w-96 h-96 bg-primary/20 rounded-full blur-3xl" />
+            <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+              <div>
+                <p className="text-primary-foreground/80 font-medium mb-2 tracking-wide text-sm uppercase">Host Dashboard</p>
+                <h1 className="text-3xl md:text-5xl font-serif font-bold text-white tracking-tight">Welcome back, {user.name?.split(' ')[0]}</h1>
+                <p className="text-slate-300 mt-2 max-w-xl">Manage your properties, track your earnings, and view your trip history all in one place.</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <Button variant="ghost" onClick={handleLogout} className="text-white hover:bg-white/10 hover:text-white">
+                  Log out
+                </Button>
+                <Button onClick={() => {
+                  setShowAddProperty(true);
+                  setEditingId(null);
+                  setNewProperty({
+                    name: '',
+                    location: '',
+                    price: '',
+                    description: '',
+                    images: [],
+                    max_guests: '2',
+                    bedrooms: '1',
+                    beds: '1',
+                    baths: '1',
+                    amenities: [],
+                    property_type: 'Stays'
+                  });
+                  setActiveTab('properties');
+                }} className="bg-white text-slate-900 hover:bg-white/90 font-medium shadow-none border-0">
+                  <Plus className="h-4 w-4 mr-2" /> List Property
+                </Button>
+              </div>
             </div>
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-            <TabsList className="w-full justify-start border-b border-border bg-transparent p-0 h-auto rounded-none space-x-2 md:space-x-6 overflow-x-auto flex-nowrap -mx-4 px-4 md:mx-0 md:px-0 no-scrollbar">
+            <TabsList className="w-full justify-start border-b border-border bg-transparent p-0 h-auto rounded-none space-x-8 overflow-x-auto flex-nowrap mb-8">
               <TabsTrigger
                 value="overview"
-                className="rounded-none border-b-2 border-transparent px-4 py-3 font-serif font-medium text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent transition-all text-lg whitespace-nowrap"
+                className="rounded-none border-b-2 border-transparent px-1 py-4 font-medium text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent transition-all text-sm uppercase tracking-wide"
               >
                 Overview
               </TabsTrigger>
               <TabsTrigger
                 value="bookings"
-                className="rounded-none border-b-2 border-transparent px-4 py-3 font-serif font-medium text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent transition-all text-lg whitespace-nowrap"
+                className="rounded-none border-b-2 border-transparent px-1 py-4 font-medium text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent transition-all text-sm uppercase tracking-wide"
               >
                 Bookings
               </TabsTrigger>
               <TabsTrigger
                 value="favorites"
-                className="rounded-none border-b-2 border-transparent px-4 py-3 font-serif font-medium text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent transition-all text-lg whitespace-nowrap"
+                className="rounded-none border-b-2 border-transparent px-1 py-4 font-medium text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent transition-all text-sm uppercase tracking-wide"
               >
                 Favorites
               </TabsTrigger>
               <TabsTrigger
                 value="properties"
-                className="rounded-none border-b-2 border-transparent px-4 py-3 font-serif font-medium text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent transition-all text-lg whitespace-nowrap"
+                className="rounded-none border-b-2 border-transparent px-1 py-4 font-medium text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent transition-all text-sm uppercase tracking-wide"
               >
                 My Properties
               </TabsTrigger>
               <TabsTrigger
                 value="profile"
-                className="rounded-none border-b-2 border-transparent px-4 py-3 font-serif font-medium text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent transition-all text-lg whitespace-nowrap"
+                className="rounded-none border-b-2 border-transparent px-1 py-4 font-medium text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent transition-all text-sm uppercase tracking-wide"
               >
                 Profile
               </TabsTrigger>
             </TabsList>
 
             {/* Overview Tab */}
-            <TabsContent value="overview" className="space-y-8 animate-fade-in">
+            <TabsContent value="overview" className="space-y-10 animate-fade-in">
 
-              {/* Traveler Stats */}
+              {/* Unified Stats Grid */}
               <div>
-                <h3 className="text-lg font-serif font-bold mb-4">Traveler Stats</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Card className="bg-card border-border shadow-sm hover:shadow-md transition-all">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium text-muted-foreground">My Trips</CardTitle>
-                      <Calendar className="h-4 w-4 text-primary" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-3xl font-bold font-serif">{analytics.totalTrips}</div>
-                      <p className="text-xs text-muted-foreground mt-1">Total bookings made</p>
-                    </CardContent>
-                  </Card>
-                  <Card className="bg-card border-border shadow-sm hover:shadow-md transition-all">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium text-muted-foreground">Total Spent</CardTitle>
-                      <div className="text-primary font-bold">KES</div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-3xl font-bold font-serif">
-                        KES {analytics.totalSpent.toLocaleString()}
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-bold tracking-tight text-slate-900">Performance Overview</h3>
+                  <span className="text-sm text-slate-500">Last updated: Just now</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {/* Traveler Metrics */}
+                  <Card className="border-none shadow-sm bg-white hover:shadow-md transition-all">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between space-y-0 pb-2">
+                        <p className="text-sm font-medium text-slate-500">My Trips</p>
+                        <Calendar className="h-4 w-4 text-slate-400" />
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">Lifetime spend on stays</p>
+                      <div className="flex items-baseline gap-2 mt-2">
+                        <div className="text-2xl font-bold text-slate-900">{analytics.totalTrips}</div>
+                        <span className="text-xs text-slate-500">bookings</span>
+                      </div>
                     </CardContent>
                   </Card>
+
+                  <Card className="border-none shadow-sm bg-white hover:shadow-md transition-all">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between space-y-0 pb-2">
+                        <p className="text-sm font-medium text-slate-500">Invested</p>
+                        <Wallet className="h-4 w-4 text-slate-400" />
+                      </div>
+                      <div className="flex items-baseline gap-2 mt-2">
+                        <div className="text-2xl font-bold text-slate-900">KES {analytics.totalSpent.toLocaleString()}</div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Host Metrics - Conditional */}
+                  {properties.length > 0 && (
+                    <>
+                      <Card className="border-none shadow-sm bg-white hover:shadow-md transition-all bg-gradient-to-br from-purple-50 to-white">
+                        <CardContent className="p-6">
+                          <div className="flex items-center justify-between space-y-0 pb-2">
+                            <p className="text-sm font-medium text-purple-700">Total Revenue</p>
+                            <DollarSign className="h-4 w-4 text-purple-400" />
+                          </div>
+                          <div className="flex items-baseline gap-2 mt-2">
+                            <div className="text-2xl font-bold text-purple-900">KES {analytics.totalRevenue.toLocaleString()}</div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="border-none shadow-sm bg-white hover:shadow-md transition-all">
+                        <CardContent className="p-6">
+                          <div className="flex items-center justify-between space-y-0 pb-2">
+                            <p className="text-sm font-medium text-slate-500">Active Listings</p>
+                            <Home className="h-4 w-4 text-slate-400" />
+                          </div>
+                          <div className="flex items-baseline gap-2 mt-2">
+                            <div className="text-2xl font-bold text-slate-900">{properties.length}</div>
+                            <span className="text-xs text-slate-500">properties</span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </>
+                  )}
                 </div>
               </div>
 
-              {/* Host Stats - Only show if they have properties */}
+              {/* Charts Section - Two Column */}
               {properties.length > 0 && (
-                <div>
-                  <h3 className="text-lg font-serif font-bold mb-4 mt-8">Hosting Analytics</h3>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  <Card className="border-none shadow-sm bg-white p-6">
+                    <div className="mb-6">
+                      <h4 className="font-bold text-lg text-slate-900">Revenue Trends</h4>
+                      <p className="text-sm text-slate-500">Monthly earnings overview</p>
+                    </div>
+                    <div className="h-[250px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={analytics.monthlyStats}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                          <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} dy={10} />
+                          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={(value) => `K${value / 1000}k`} />
+                          <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                          <Bar dataKey="revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={32} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </Card>
 
-                  {/* Stats Cards */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <Card className="bg-card border-border shadow-sm hover:shadow-md transition-all">
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Active Listings</CardTitle>
-                        <Home className="h-4 w-4 text-secondary" />
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-3xl font-bold font-serif">{properties.length}</div>
-                        <p className="text-xs text-muted-foreground mt-1">Properties listed</p>
-                      </CardContent>
-                    </Card>
-                    <Card className="bg-card border-border shadow-sm hover:shadow-md transition-all">
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Total Guests</CardTitle>
-                        <User className="h-4 w-4 text-primary" />
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-3xl font-bold font-serif">{analytics.totalHostingBookings}</div>
-                        <p className="text-xs text-muted-foreground mt-1">Bookings received</p>
-                      </CardContent>
-                    </Card>
-                    <Card className="bg-card border-border shadow-sm hover:shadow-md transition-all">
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
-                        <div className="text-green-600 font-bold">KES</div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-3xl font-bold font-serif text-green-700">
-                          KES {analytics.totalRevenue.toLocaleString()}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">Lifetime earnings</p>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  {/* Charts Section */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                    <Card className="p-6">
-                      <div className="flex items-center justify-between mb-6">
-                        <div>
-                          <h4 className="font-semibold text-lg">Revenue Overview</h4>
-                          <p className="text-sm text-muted-foreground">Monthly earnings from all properties</p>
-                        </div>
-                        <div className="p-2 bg-green-100 rounded-full">
-                          <TrendingUp className="h-5 w-5 text-green-700" />
-                        </div>
-                      </div>
-                      <div className="h-[300px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={analytics.monthlyStats}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                            <XAxis
-                              dataKey="name"
-                              axisLine={false}
-                              tickLine={false}
-                              tick={{ fontSize: 12, fill: '#6B7280' }}
-                              dy={10}
-                            />
-                            <YAxis
-                              axisLine={false}
-                              tickLine={false}
-                              tick={{ fontSize: 12, fill: '#6B7280' }}
-                              tickFormatter={(value) => `K${value / 1000}k`}
-                            />
-                            <Tooltip
-                              cursor={{ fill: 'transparent' }}
-                              contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                              formatter={(value: number) => [`KES ${value.toLocaleString()}`, 'Revenue']}
-                            />
-                            <Bar
-                              dataKey="revenue"
-                              fill="#0ea5e9"
-                              radius={[4, 4, 0, 0]}
-                              barSize={32}
-                            />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </Card>
-
-                    <Card className="p-6">
-                      <div className="flex items-center justify-between mb-6">
-                        <div>
-                          <h4 className="font-semibold text-lg">Booking Trends</h4>
-                          <p className="text-sm text-muted-foreground">Number of reservations per month</p>
-                        </div>
-                        <div className="p-2 bg-blue-100 rounded-full">
-                          <User className="h-5 w-5 text-blue-700" />
-                        </div>
-                      </div>
-                      <div className="h-[300px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={analytics.monthlyStats}>
-                            <defs>
-                              <linearGradient id="colorBookings" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.1} />
-                                <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
-                              </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                            <XAxis
-                              dataKey="name"
-                              axisLine={false}
-                              tickLine={false}
-                              tick={{ fontSize: 12, fill: '#6B7280' }}
-                              dy={10}
-                            />
-                            <YAxis
-                              axisLine={false}
-                              tickLine={false}
-                              tick={{ fontSize: 12, fill: '#6B7280' }}
-                            />
-                            <Tooltip
-                              contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                            />
-                            <Area
-                              type="monotone"
-                              dataKey="bookings"
-                              stroke="#0ea5e9"
-                              strokeWidth={3}
-                              fill="url(#colorBookings)"
-                            />
-                          </AreaChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </Card>
-                  </div>
+                  <Card className="border-none shadow-sm bg-white p-6">
+                    <div className="mb-6">
+                      <h4 className="font-bold text-lg text-slate-900">Occupancy Rate</h4>
+                      <p className="text-sm text-slate-500">Booking consistency</p>
+                    </div>
+                    <div className="h-[250px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={analytics.monthlyStats}>
+                          <defs>
+                            <linearGradient id="colorBookings" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.2} />
+                              <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                          <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} dy={10} />
+                          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
+                          <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                          <Area type="monotone" dataKey="bookings" stroke="#8b5cf6" strokeWidth={3} fill="url(#colorBookings)" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </Card>
                 </div>
               )}
 
-              {/* Recent Bookings */}
-              <div className="space-y-4">
-                <h3 className="text-xl font-serif font-bold">Recent Activity</h3>
-                <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-                  <div className="grid gap-0">
-                    {bookings.slice(0, 5).map((booking, i) => (
-                      <div key={booking.id} className={`flex items-center justify-between p-4 ${i !== bookings.length - 1 ? 'border-b border-border' : ''} hover:bg-neutral/5 transition-colors`}>
-                        <div className="flex items-center gap-4">
-                          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-serif font-bold">
-                            {booking.properties?.title.charAt(0)}
-                          </div>
-                          <div>
-                            <h4 className="font-semibold">{booking.properties?.title}</h4>
-                            <p className="text-sm text-muted-foreground">
-                              {new Date(booking.check_in).toLocaleDateString()} -{' '}
-                              {new Date(booking.check_out).toLocaleDateString()}
-                            </p>
-                          </div>
+              {/* Recent Activity Section */}
+              <div className="border-none shadow-sm bg-white rounded-xl overflow-hidden p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-bold text-slate-900">Recent Activity</h3>
+                  <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/5" onClick={() => setActiveTab('bookings')}>View All</Button>
+                </div>
+
+                <div className="space-y-1">
+                  {bookings.slice(0, 5).map((booking, i) => (
+                    <div key={booking.id} className="flex items-center justify-between p-4 hover:bg-slate-50 rounded-lg transition-colors group cursor-pointer" onClick={() => navigate('/properties')}>
+                      <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-sm">
+                          {booking.properties?.title.charAt(0)}
                         </div>
-                        <div className="text-right">
-                          <p className="font-semibold">KES {booking.total_price.toLocaleString()}</p>
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
-                            booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-red-100 text-red-800'
-                            }`}>
-                            {booking.status}
-                          </span>
+                        <div>
+                          <h4 className="font-semibold text-slate-900 group-hover:text-primary transition-colors">{booking.properties?.title}</h4>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            {new Date(booking.check_in).toLocaleDateString()} — {new Date(booking.check_out).toLocaleDateString()}
+                          </p>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                      <div className="text-right">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${booking.status === 'confirmed' ? 'bg-green-100 text-green-700' :
+                          booking.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-red-100 text-red-700'
+                          }`}>
+                          {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                        </span>
+                        <p className="text-sm font-semibold text-slate-900 mt-1">KES {booking.total_price.toLocaleString()}</p>
+                      </div>
+                    </div>
+                  ))}
+                  {bookings.length === 0 && (
+                    <div className="py-12 text-center">
+                      <div className="h-12 w-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <Calendar className="h-6 w-6 text-slate-300" />
+                      </div>
+                      <p className="text-slate-500 font-medium">No recent activity</p>
+                      <p className="text-sm text-slate-400 mt-1">Your recent bookings will appear here</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </TabsContent>
 
             {/* Bookings Tab */}
-            <TabsContent value="bookings" className="animate-fade-in">
+            <TabsContent value="bookings" className="animate-fade-in space-y-6">
               {isLoading ? (
-                <div className="flex justify-center py-12">
+                <div className="flex justify-center py-20">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
               ) : bookings.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed border-border rounded-xl bg-neutral/5">
-                  <div className="h-16 w-16 bg-neutral/10 rounded-full flex items-center justify-center mb-4">
-                    <Calendar className="h-8 w-8 text-muted-foreground" />
+                <div className="flex flex-col items-center justify-center py-24 text-center border-none bg-white shadow-sm rounded-3xl">
+                  <div className="h-20 w-20 bg-blue-50 rounded-full flex items-center justify-center mb-6">
+                    <Calendar className="h-10 w-10 text-blue-500" />
                   </div>
-                  <h3 className="text-xl font-serif font-bold mb-2">No bookings yet</h3>
-                  <p className="text-muted-foreground max-w-sm mx-auto mb-6">
+                  <h3 className="text-2xl font-serif font-bold mb-3 text-slate-800">No bookings yet</h3>
+                  <p className="text-slate-500 max-w-sm mx-auto mb-8">
                     You haven't made any reservations. Your next adventure is just a click away!
                   </p>
-                  <Button onClick={() => navigate('/')} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                  <Button onClick={() => navigate('/properties')} size="lg" className="bg-slate-900 text-white hover:bg-slate-800 rounded-full px-8">
                     Explore Properties
                   </Button>
                 </div>
               ) : (
-                <div className="grid gap-4">
+                <div className="grid gap-6">
                   {bookings.map((booking) => (
-                    <Card key={booking.id} className="bg-card border-border shadow-sm hover:shadow-md transition-all">
-                      <CardContent className="p-6">
-                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                          <div className="flex items-center gap-4">
-                            <div className="h-12 w-12 rounded-lg bg-neutral/10 flex items-center justify-center">
-                              <Calendar className="h-6 w-6 text-muted-foreground" />
-                            </div>
-                            <div>
-                              <h3 className="font-semibold text-lg">{booking.properties?.title}</h3>
-                              <p className="text-sm text-muted-foreground">ID: #{booking.id}</p>
-                            </div>
-                          </div>
+                    <Card key={booking.id} className="border-none shadow-sm bg-white hover:shadow-md transition-all overflow-hidden group">
+                      <CardContent className="p-0">
+                        <div className="flex flex-col md:flex-row">
+                          {/* Image or Placeholder on Left (Could be added if property has images) */}
+                          <div className="md:w-2 bg-slate-100 group-hover:bg-primary/20 transition-colors" />
 
-                          <div className="flex flex-wrap gap-6 items-center">
-                            <div className="text-sm">
-                              <span className="text-muted-foreground block text-xs uppercase tracking-wider">Dates</span>
-                              {new Date(booking.check_in).toLocaleDateString()} - {new Date(booking.check_out).toLocaleDateString()}
+                          <div className="flex-grow p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                            <div className="flex items-start gap-4">
+                              <div className="h-12 w-12 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
+                                <Calendar className="h-6 w-6 text-slate-500" />
+                              </div>
+                              <div>
+                                <h3 className="font-bold text-lg text-slate-800">{booking.properties?.title}</h3>
+                                <p className="text-xs text-slate-400 font-mono mt-1">ID: {booking.id.split('-')[0]}...</p>
+                                <div className="flex items-center gap-4 mt-3 text-sm text-slate-600">
+                                  <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-md">
+                                    <Calendar className="h-3.5 w-3.5" />
+                                    <span>{new Date(booking.check_in).toLocaleDateString()} - {new Date(booking.check_out).toLocaleDateString()}</span>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
-                            <div className="text-sm">
-                              <span className="text-muted-foreground block text-xs uppercase tracking-wider">Total</span>
-                              <span className="font-semibold text-lg">KES {booking.total_price.toLocaleString()}</span>
+
+                            <div className="flex flex-wrap gap-6 items-center w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 border-slate-100 pt-4 md:pt-0 mt-2 md:mt-0">
+                              <div className="text-right mr-4">
+                                <p className="text-sm text-slate-500 mb-0.5">Total</p>
+                                <p className="font-bold text-xl text-slate-900">KES {booking.total_price.toLocaleString()}</p>
+                              </div>
+
+                              <div className="flex items-center gap-3">
+                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${booking.status === 'confirmed' ? 'bg-green-100 text-green-700' :
+                                  booking.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-red-100 text-red-700'
+                                  }`}>
+                                  {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                                </span>
+
+                                {booking.status !== 'cancelled' && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    onClick={() => handleCancelClick(booking.id)}
+                                  >
+                                    Cancel
+                                  </Button>
+                                )}
+                              </div>
                             </div>
-                            <div>
-                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
-                                booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                  'bg-red-100 text-red-800'
-                                }`}>
-                                {booking.status}
-                              </span>
-                            </div>
-                            {booking.status !== 'cancelled' && (
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                className="h-8"
-                                onClick={() => handleCancelClick(booking.id)}
-                              >
-                                Cancel
-                              </Button>
-                            )}
                           </div>
                         </div>
                       </CardContent>
@@ -861,43 +893,53 @@ const Dashboard: React.FC = () => {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {properties.map((property) => (
-                    <Card key={property.id} className="group bg-card border-border overflow-hidden hover:shadow-xl transition-all duration-300">
-                      <div className="relative h-48 overflow-hidden">
+                    <Card key={property.id} className="group border-none shadow-sm hover:shadow-xl transition-all duration-300 bg-white overflow-hidden rounded-2xl">
+                      <div className="relative h-56 overflow-hidden">
                         <img
                           src={property.images?.[0] || 'https://via.placeholder.com/300x200'}
                           alt={property.title}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                         />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <Button size="icon" variant="secondary" className="h-8 w-8 bg-white/90 hover:bg-white text-slate-900 shadow-sm" onClick={() => startEditing(property)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button size="icon" variant="secondary" className="h-8 w-8 bg-white/90 hover:bg-white text-slate-900 shadow-sm" onClick={() => setCalendarProperty({ id: property.id, title: property.title })} title="Manage Calendar">
+                            <Calendar className="h-4 w-4" />
+                          </Button>
+                          <Button size="icon" variant="destructive" className="h-8 w-8 shadow-sm" onClick={async () => {
+                            if (confirm('Are you sure you want to delete this property?')) {
+                              try {
+                                await api.deleteProperty(property.id);
+                                setProperties(properties.filter(p => p.id !== property.id));
+                                toast.success('Property deleted successfully');
+                              } catch (error) {
+                                console.error('Error deleting property:', error);
+                                toast.error('Failed to delete property');
+                              }
+                            }
+                          }}>
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                       <CardContent className="p-5">
-                        <h3 className="font-serif font-bold text-xl mb-1">{property.title}</h3>
-                        <p className="text-sm text-muted-foreground mb-4 flex items-center">
-                          <MapPin className="h-3 w-3 mr-1" /> {property.location}
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="font-bold text-lg text-slate-900 line-clamp-1">{property.title}</h3>
+                        </div>
+                        <p className="text-sm text-slate-500 mb-4 flex items-center">
+                          <MapPin className="h-3.5 w-3.5 mr-1" /> {property.location}
                         </p>
 
-                        <div className="flex justify-between items-end">
+                        <div className="flex items-center justify-between pt-4 border-t border-slate-100">
                           <div>
                             <span className="text-lg font-bold text-primary">KES {property.price_per_night}</span>
-                            <span className="text-xs text-muted-foreground">/night</span>
+                            <span className="text-xs text-slate-400">/night</span>
                           </div>
-                          <div className="flex gap-2">
-                            <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => startEditing(property)}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="outline" size="sm" className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={async () => {
-                              if (confirm('Are you sure you want to delete this property?')) {
-                                try {
-                                  await api.deleteProperty(property.id);
-                                  setProperties(properties.filter(p => p.id !== property.id));
-                                  toast.success('Property deleted successfully');
-                                } catch (error) {
-                                  console.error('Error deleting property:', error);
-                                  toast.error('Failed to delete property');
-                                }
-                              }
-                            }}>
-                              <Trash className="h-4 w-4" />
-                            </Button>
+                          <div className="flex items-center text-xs text-slate-500 gap-3">
+                            <span className="flex items-center gap-1"><User className="h-3 w-3" /> {property.max_guests}</span>
+                            <span className="flex items-center gap-1">★ 4.9</span>
                           </div>
                         </div>
                       </CardContent>
@@ -906,12 +948,13 @@ const Dashboard: React.FC = () => {
 
                   <div
                     onClick={() => setShowAddProperty(true)}
-                    className="border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center h-full min-h-[300px] cursor-pointer hover:border-primary hover:bg-primary/5 transition-all group"
+                    className="border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center h-full min-h-[350px] cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-all group bg-slate-50/50"
                   >
-                    <div className="h-12 w-12 rounded-full bg-neutral/10 flex items-center justify-center group-hover:scale-110 transition-transform mb-4">
-                      <Plus className="h-6 w-6 text-muted-foreground group-hover:text-primary" />
+                    <div className="h-16 w-16 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform mb-4 text-primary">
+                      <Plus className="h-8 w-8" />
                     </div>
-                    <h3 className="font-semibold text-lg text-muted-foreground group-hover:text-primary">Add New Property</h3>
+                    <h3 className="font-semibold text-lg text-slate-600 group-hover:text-primary transition-colors">Add New Property</h3>
+                    <p className="text-sm text-slate-400 mt-2 text-center px-8">Create a new listing to start hosting guests</p>
                   </div>
                 </div>
               )}
@@ -920,59 +963,70 @@ const Dashboard: React.FC = () => {
             {/* Favorites Tab */}
             <TabsContent value="favorites" className="animate-fade-in">
               {isLoading ? (
-                <div className="flex justify-center py-12">
+                <div className="flex justify-center py-20">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
               ) : favorites.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed border-border rounded-xl bg-neutral/5">
-                  <div className="h-16 w-16 bg-neutral/10 rounded-full flex items-center justify-center mb-4">
-                    <Heart className="h-8 w-8 text-muted-foreground" />
+                <div className="flex flex-col items-center justify-center py-24 text-center border-none bg-white shadow-sm rounded-3xl">
+                  <div className="h-20 w-20 bg-rose-50 rounded-full flex items-center justify-center mb-6">
+                    <Heart className="h-10 w-10 text-rose-500" />
                   </div>
-                  <h3 className="text-xl font-serif font-bold mb-2">No favorites yet</h3>
-                  <p className="text-muted-foreground max-w-sm mx-auto mb-6">
+                  <h3 className="text-2xl font-serif font-bold mb-3 text-slate-800">No favorites yet</h3>
+                  <p className="text-slate-500 max-w-sm mx-auto mb-8">
                     Start exploring and save your dream stays here for quick access.
                   </p>
-                  <Button onClick={() => navigate('/properties')} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                  <Button onClick={() => navigate('/properties')} size="lg" className="bg-slate-900 text-white hover:bg-slate-800 rounded-full px-8">
                     Explore Properties
                   </Button>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {favorites.map((property) => (
-                    <Card key={property.id} className="group bg-card border-border overflow-hidden hover:shadow-xl transition-all duration-300">
-                      <div className="relative h-48 overflow-hidden">
+                    <Card key={property.id} className="group border-none shadow-sm hover:shadow-xl transition-all duration-300 bg-white overflow-hidden rounded-2xl cursor-pointer" onClick={() => navigate(`/property/${property.id}`)}>
+                      <div className="relative h-56 overflow-hidden">
                         <img
                           src={property.images?.[0] || 'https://via.placeholder.com/300x200'}
                           alt={property.title}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                         />
-                        <button
-                          className="absolute top-2 right-2 p-2 bg-white/90 rounded-full shadow-sm hover:scale-110 transition-transform"
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            try {
-                              await api.removeFavorite(property.id, user.id);
-                              setFavorites(favorites.filter(f => f.id !== property.id));
-                              toast.success('Removed from favorites');
-                            } catch (error) {
-                              toast.error('Failed to remove');
-                            }
-                          }}
-                        >
-                          <Heart className="h-4 w-4 fill-red-500 text-red-500" />
-                        </button>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
+
+                        <div className="absolute top-3 right-3 z-10">
+                          <button
+                            className="p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-sm hover:scale-110 active:scale-95 transition-all group/btn"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              try {
+                                await api.removeFavorite(property.id, user.id);
+                                setFavorites(favorites.filter(f => f.id !== property.id));
+                                toast.success('Removed from favorites');
+                              } catch (error) {
+                                toast.error('Failed to remove');
+                              }
+                            }}
+                          >
+                            <Heart className="h-5 w-5 fill-rose-500 text-rose-500" />
+                          </button>
+                        </div>
+
+                        <div className="absolute bottom-4 left-4 right-4 text-white">
+                          <div className="flex justify-between items-end">
+                            <div>
+                              <h3 className="font-bold text-lg leading-tight line-clamp-1 text-white text-shadow-sm">{property.title}</h3>
+                              <p className="text-sm text-slate-200 flex items-center mt-1">
+                                <MapPin className="h-3.5 w-3.5 mr-1" /> {property.location}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                       <CardContent className="p-5">
-                        <h3 className="font-serif font-bold text-xl mb-1">{property.title}</h3>
-                        <p className="text-sm text-muted-foreground mb-4 flex items-center">
-                          <MapPin className="h-3 w-3 mr-1" /> {property.location}
-                        </p>
-                        <div className="flex justify-between items-end">
+                        <div className="flex justify-between items-center">
                           <div>
-                            <span className="text-lg font-bold text-primary">KES {property.price_per_night}</span>
-                            <span className="text-xs text-muted-foreground">/night</span>
+                            <span className="text-xl font-bold text-slate-900">KES {property.price_per_night}</span>
+                            <span className="text-sm text-slate-500">/night</span>
                           </div>
-                          <Button variant="outline" size="sm" onClick={() => navigate(`/property/${property.id}`)}>
+                          <Button variant="ghost" size="sm" className="text-primary hover:text-primary hover:bg-primary/5 font-medium px-0">
                             View Details
                           </Button>
                         </div>
@@ -985,19 +1039,19 @@ const Dashboard: React.FC = () => {
 
             {/* Profile Tab */}
             <TabsContent value="profile" className="animate-fade-in">
-              <div className="max-w-3xl">
-                <Card className="bg-card border-border shadow-sm">
-                  <CardHeader>
-                    <CardTitle>My Profile</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-8">
-                    <div className="flex flex-col md:flex-row items-center gap-8">
+              <div className="max-w-4xl mx-auto">
+                <Card className="border-none shadow-sm bg-white overflow-hidden rounded-3xl">
+                  <div className="h-32 bg-slate-900 relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-transparent" />
+                  </div>
+                  <CardContent className="space-y-8 px-8 pb-12">
+                    <div className="flex flex-col md:flex-row items-end md:items-end gap-8 -mt-16 px-4">
                       <div className="relative group cursor-pointer">
-                        <Avatar className="h-32 w-32 border-4 border-background shadow-xl">
+                        <Avatar className="h-32 w-32 border-4 border-white shadow-xl bg-white">
                           <AvatarImage src={user.avatar_url} className="object-cover" />
-                          <AvatarFallback className="text-4xl bg-primary text-primary-foreground">{user.name?.charAt(0)}</AvatarFallback>
+                          <AvatarFallback className="text-4xl bg-slate-100 text-slate-500">{user.name?.charAt(0)}</AvatarFallback>
                         </Avatar>
-                        <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-[2px]">
                           <label htmlFor="avatar-upload" className="cursor-pointer text-white flex flex-col items-center">
                             <Edit className="h-6 w-6 mb-1" />
                             <span className="text-xs font-medium">Change</span>
@@ -1011,68 +1065,76 @@ const Dashboard: React.FC = () => {
                           />
                         </div>
                       </div>
-                      <div>
-                        <h2 className="text-2xl font-serif font-bold">{user.name}</h2>
-                        <p className="text-muted-foreground">{user.email}</p>
-                        <Badge variant="outline" className="mt-2 capitalize">{user.user_type}</Badge>
+                      <div className="mb-2 text-center md:text-left">
+                        <h2 className="text-3xl font-serif font-bold text-slate-900">{user.name}</h2>
+                        <p className="text-slate-500">{user.email}</p>
+                        <Badge variant="outline" className="mt-2 capitalize bg-slate-50 text-slate-600 border-slate-200">{user.user_type}</Badge>
                       </div>
                     </div>
 
+                    <div className="h-px bg-slate-100 my-8" />
+
                     {!isEditingProfile ? (
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-8 px-4">
+                        <h3 className="text-xl font-bold text-slate-900">Personal Information</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
                           <div>
-                            <Label className="text-muted-foreground">Full Name</Label>
-                            <p className="font-medium text-lg">{user.name || 'Not set'}</p>
+                            <Label className="text-slate-500 text-xs uppercase tracking-wider font-semibold mb-2 block">Full Name</Label>
+                            <p className="text-lg font-medium text-slate-900 border-b border-slate-100 pb-2">{user.name || 'Not set'}</p>
                           </div>
                           <div>
-                            <Label className="text-muted-foreground">User ID</Label>
-                            <p className="font-mono text-sm bg-neutral/10 p-1 px-2 rounded w-fit">{user.id}</p>
+                            <Label className="text-slate-500 text-xs uppercase tracking-wider font-semibold mb-2 block">Email Address</Label>
+                            <p className="text-lg font-medium text-slate-900 border-b border-slate-100 pb-2">{user.email}</p>
                           </div>
                           <div>
-                            <Label className="text-muted-foreground">Email</Label>
-                            <p className="font-medium text-lg">{user.email}</p>
+                            <Label className="text-slate-500 text-xs uppercase tracking-wider font-semibold mb-2 block">Phone Number</Label>
+                            <p className="text-lg font-medium text-slate-900 border-b border-slate-100 pb-2">{user.phone || 'Not set'}</p>
                           </div>
                           <div>
-                            <Label className="text-muted-foreground">Phone</Label>
-                            <p className="font-medium text-lg">{user.phone || 'Not set'}</p>
+                            <Label className="text-slate-500 text-xs uppercase tracking-wider font-semibold mb-2 block">Account ID</Label>
+                            <p className="font-mono text-sm text-slate-400 bg-slate-50 p-2 rounded w-fit">{user.id}</p>
                           </div>
                         </div>
-                        <Button onClick={() => {
-                          setProfileForm({
-                            full_name: user.name || '',
-                            phone: user.phone || ''
-                          });
-                          setIsEditingProfile(true);
-                        }} variant="outline">
-                          Edit Profile
-                        </Button>
+                        <div className="flex justify-end pt-4">
+                          <Button onClick={() => {
+                            setProfileForm({
+                              full_name: user.name || '',
+                              phone: user.phone || ''
+                            });
+                            setIsEditingProfile(true);
+                          }} size="lg" className="bg-slate-900 hover:bg-slate-800 text-white px-8 rounded-full">
+                            Edit Profile
+                          </Button>
+                        </div>
                       </div>
                     ) : (
-                      <form onSubmit={handleUpdateProfile} className="space-y-6 animate-fade-in">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div className="space-y-2">
-                            <Label htmlFor="full_name">Full Name</Label>
+                      <form onSubmit={handleUpdateProfile} className="space-y-8 px-4 animate-in slide-in-from-bottom-2 fade-in duration-300">
+                        <h3 className="text-xl font-bold text-slate-900">Edit Profile</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                          <div className="space-y-3">
+                            <Label htmlFor="full_name" className="text-slate-700">Full Name</Label>
                             <Input
                               id="full_name"
                               value={profileForm.full_name}
                               onChange={(e) => setProfileForm({ ...profileForm, full_name: e.target.value })}
+                              className="h-12 border-slate-200 focus-visible:ring-primary"
                             />
                           </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="phone">Phone Number</Label>
+                          <div className="space-y-3">
+                            <Label htmlFor="phone" className="text-slate-700">Phone Number</Label>
                             <Input
                               id="phone"
                               value={profileForm.phone}
                               onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                              className="h-12 border-slate-200 focus-visible:ring-primary"
                             />
                           </div>
                         </div>
-                        <div className="flex space-x-2">
-                          <Button type="button" variant="ghost" onClick={() => setIsEditingProfile(false)}>
+                        <div className="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+                          <Button type="button" variant="ghost" size="lg" onClick={() => setIsEditingProfile(false)} className="rounded-full">
                             Cancel
                           </Button>
-                          <Button type="submit">Save Changes</Button>
+                          <Button type="submit" size="lg" className="bg-primary hover:bg-primary/90 rounded-full px-8">Save Changes</Button>
                         </div>
                       </form>
                     )}
@@ -1101,6 +1163,13 @@ const Dashboard: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ManageCalendarDialog
+        propertyId={calendarProperty?.id || null}
+        propertyTitle={calendarProperty?.title || ''}
+        isOpen={!!calendarProperty}
+        onClose={() => setCalendarProperty(null)}
+      />
     </div>
   );
 };
