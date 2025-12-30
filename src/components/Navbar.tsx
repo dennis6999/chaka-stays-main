@@ -136,85 +136,109 @@ const Navbar = () => {
                   <Menu className="h-7 w-7" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[300px] sm:w-[350px] flex flex-col pt-12">
-                <SheetHeader className="text-left mb-6">
-                  <SheetTitle className="text-2xl font-serif font-bold">Menu</SheetTitle>
-                </SheetHeader>
+              <SheetContent side="right" className="w-[300px] sm-[350px] flex flex-col pt-0 border-l border-zinc-200/50 bg-white/80 backdrop-blur-xl p-0 text-zinc-950 shadow-2xl">
 
-                <div className="flex flex-col space-y-6 flex-grow">
-                  <div className="space-y-4">
-                    <SheetClose asChild>
-                      <Link to="/" className="flex items-center text-lg font-medium hover:text-primary transition-colors py-2">
-                        Home
-                      </Link>
-                    </SheetClose>
-                    <SheetClose asChild>
-                      <Link to="/properties" className="flex items-center text-lg font-medium hover:text-primary transition-colors py-2">
-                        Stays
-                      </Link>
-                    </SheetClose>
-                    <SheetClose asChild>
-                      <Link to="/about" className="flex items-center text-lg font-medium hover:text-primary transition-colors py-2">
-                        Our Story
-                      </Link>
-                    </SheetClose>
+                {/* Mobile Menu Header */}
+                <div className="p-6 pb-2 pt-8">
+                  <div className="flex items-center justify-between mb-8">
+                    <span className="text-2xl font-serif font-bold tracking-tight text-zinc-950">
+                      Chaka<span className="text-primary">Stays</span>
+                    </span>
+                    {/* Close button is handled by Sheet primitive, but we can add brand element here */}
                   </div>
 
-                  <div className="w-full h-px bg-border/50"></div>
+                  {/* User Profile Card (Mobile) */}
+                  {user ? (
+                    <div className="bg-white/60 rounded-2xl p-4 border border-zinc-100 shadow-sm mb-6 flex items-center gap-4">
+                      <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
+                        <AvatarImage src={user.avatar_url} alt={user.name} />
+                        <AvatarFallback className="bg-primary text-white font-serif text-lg">
+                          {user.name?.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="overflow-hidden">
+                        <p className="font-medium text-zinc-950 truncate">{user.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mb-8">
+                      <SheetClose asChild>
+                        <Link to="/auth">
+                          <Button className="w-full text-lg h-12 bg-primary text-white hover:bg-primary/90 font-bold rounded-full shadow-lg shadow-primary/20">
+                            Sign In / Sign Up
+                          </Button>
+                        </Link>
+                      </SheetClose>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex flex-col px-6 space-y-2 flex-grow overflow-y-auto custom-scrollbar">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 px-2">Explore</p>
+
+                  {[
+                    { to: '/', label: 'Home', delay: 'delay-100' },
+                    { to: '/properties', label: 'Stays', delay: 'delay-200' },
+                    { to: '/about', label: 'Our Story', delay: 'delay-300' }
+                  ].map((link, i) => (
+                    <SheetClose key={link.to} asChild>
+                      <Link
+                        to={link.to}
+                        className={`text-3xl font-serif font-bold text-zinc-800 hover:text-primary transition-all py-3 px-2 rounded-xl hover:bg-zinc-50 animate-in slide-in-from-right-10 fade-in duration-500 fill-mode-both ${link.delay}`}
+                      >
+                        {link.label}
+                      </Link>
+                    </SheetClose>
+                  ))}
+
+                  <div className="h-px bg-zinc-100 my-6" />
+
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 px-2">Account</p>
 
                   {user ? (
-                    <div className="space-y-4">
-                      <div className="flex items-center space-x-3 mb-4">
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage src={user.avatar_url} alt={user.name} />
-                          <AvatarFallback className="bg-primary text-white">
-                            {user.name?.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium text-sm">{user.name}</p>
-                          <p className="text-xs text-muted-foreground truncate max-w-[150px]">{user.email}</p>
-                        </div>
-                      </div>
+                    <div className="space-y-1">
                       {user.is_admin && (
                         <SheetClose asChild>
-                          <Link to="/admin" className="flex items-center text-lg font-bold text-primary hover:text-primary/80 transition-colors py-2">
+                          <Link to="/admin" className="flex items-center text-lg font-medium text-zinc-600 hover:text-primary hover:bg-zinc-50 p-3 rounded-lg transition-colors">
                             <User className="mr-3 h-5 w-5" /> Admin Panel
                           </Link>
                         </SheetClose>
                       )}
                       <SheetClose asChild>
-                        <Link to="/dashboard" className="flex items-center text-lg font-medium hover:text-primary transition-colors py-2">
+                        <Link to="/dashboard" className="flex items-center text-lg font-medium text-zinc-600 hover:text-primary hover:bg-zinc-50 p-3 rounded-lg transition-colors">
                           <User className="mr-3 h-5 w-5" /> Dashboard
                         </Link>
                       </SheetClose>
                       <SheetClose asChild>
-                        <div
-                          onClick={handleLogout}
-                          className="flex items-center text-lg font-medium text-destructive hover:text-destructive/80 transition-colors py-2 cursor-pointer"
-                        >
-                          <LogOut className="mr-3 h-5 w-5" /> Logout
-                        </div>
+                        <button onClick={handleLogout} className="w-full flex items-center text-lg font-medium text-red-500 hover:text-red-600 hover:bg-red-50 p-3 rounded-lg transition-colors">
+                          <LogOut className="mr-3 h-5 w-5" /> Log out
+                        </button>
                       </SheetClose>
                     </div>
                   ) : (
-                    <div className="space-y-4">
-                      <SheetClose asChild>
-                        <Button asChild className="w-full h-12 text-lg rounded-full bg-primary hover:bg-primary/90 text-white shadow-md">
-                          <Link to="/auth">Sign In</Link>
-                        </Button>
-                      </SheetClose>
+                    <div className="px-2 text-muted-foreground text-sm italic">
+                      Log in to access your dashboard and bookings.
                     </div>
                   )}
 
-                  <div className="mt-auto">
+                  <div className="mt-8">
                     <SheetClose asChild>
-                      <Button asChild variant="outline" className="w-full border-primary/20 text-primary hover:text-primary hover:bg-primary/5">
-                        <Link to={user ? "/dashboard" : "/auth"}>Host a Property</Link>
-                      </Button>
+                      <Link to={user ? "/dashboard" : "/auth"}>
+                        <div className="bg-gradient-to-r from-primary to-purple-600 rounded-2xl p-5 text-center relative overflow-hidden group shadow-lg shadow-primary/20">
+                          <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          <h4 className="text-xl font-bold text-white mb-1 relative z-10">Host your home</h4>
+                          <p className="text-white/90 text-sm relative z-10">Earn income by sharing your space</p>
+                        </div>
+                      </Link>
                     </SheetClose>
                   </div>
                 </div>
+
+                <div className="p-6 text-center border-t border-zinc-100">
+                  <p className="text-xs text-muted-foreground">© 2024 Chaka Stays. All rights reserved.</p>
+                </div>
+
               </SheetContent>
             </Sheet>
           </div>
