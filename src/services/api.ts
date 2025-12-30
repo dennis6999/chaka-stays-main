@@ -204,15 +204,10 @@ export const api = {
     },
 
     async cancelBooking(bookingId: string) {
-        const { data, error } = await supabase
-            .from('bookings')
-            .update({ status: 'cancelled' })
-            .eq('id', bookingId)
-            .select()
-            .single();
+        const { error } = await supabase
+            .rpc('cancel_booking_secure', { booking_id: bookingId });
 
         if (error) throw error;
-        return data;
     },
 
     async createBooking(booking: {
@@ -222,11 +217,22 @@ export const api = {
         check_out: Date;
         total_price: number;
     }) {
+        // 1. Safety Check: Is property banned?
+        const { data: property, error: propError } = await supabase
+            .from('properties')
+            .select('is_banned')
+            .eq('id', booking.property_id)
+            .single();
+
+        if (propError || !property) throw new Error("Property not found");
+        if (property.is_banned) throw new Error("This property is no longer accepting bookings.");
+
+        // 2. Proceed with booking
         const { data, error } = await supabase
             .from('bookings')
             .insert({
                 ...booking,
-                status: 'confirmed' // Auto-confirm for demo
+                status: 'confirmed'
             })
             .select()
             .single();

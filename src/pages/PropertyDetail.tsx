@@ -230,9 +230,9 @@ const PropertyDetail = () => {
       toast.success('Booking created successfully! Redirecting to dashboard...');
       setTimeout(() => navigate('/dashboard'), 1500);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating booking:', error);
-      toast.error('Failed to create booking');
+      toast.error(error.message || 'Failed to create booking');
     } finally {
       setIsBooking(false);
     }
@@ -267,7 +267,14 @@ const PropertyDetail = () => {
         <div className="chaka-container">
           {/* Header Section */}
           <div className="mb-6">
-            <h1 className="text-3xl md:text-5xl font-serif font-bold text-foreground mb-4 leading-tight">{property.title}</h1>
+            <div className="flex items-center gap-4 mb-4">
+              <h1 className="text-3xl md:text-5xl font-serif font-bold text-foreground leading-tight">{property.title}</h1>
+              {property.is_banned && (
+                <Badge variant="destructive" className="self-center h-8 px-3 text-sm uppercase tracking-wide">
+                  Banned
+                </Badge>
+              )}
+            </div>
             <div className="flex flex-wrap items-center gap-4 text-muted-foreground text-sm font-medium">
               <div className="flex items-center">
                 <Star className="h-4 w-4 text-secondary fill-secondary mr-1" />

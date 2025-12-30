@@ -16,6 +16,7 @@ interface PropertyCardProps {
   beds?: number;
   baths?: number;
   featured?: boolean;
+  is_banned?: boolean;
 }
 
 const PropertyCard = ({
@@ -31,6 +32,7 @@ const PropertyCard = ({
   beds = 1,
   baths = 1,
   featured = false,
+  is_banned = false,
 }: PropertyCardProps) => {
   return (
     <Link to={`/property/${id}`} className="block h-full group">
@@ -41,20 +43,27 @@ const PropertyCard = ({
           <img
             src={image}
             alt={name}
-            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            className={`absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 ${is_banned ? 'grayscale' : ''}`}
             loading="lazy"
           />
           {/* Gradient Overlay for text contrast if needed, but keeping clean for now */}
           <div className="absolute inset-0 ring-1 ring-inset ring-black/5" />
 
           <div className="absolute top-4 left-4 right-4 flex justify-between items-start">
-            {featured && (
-              <Badge className="bg-white/95 backdrop-blur-sm text-primary text-[10px] font-bold px-2.5 py-1 uppercase tracking-wider border-0 shadow-sm">
-                Featured
-              </Badge>
-            )}
+            <div className="flex flex-col gap-2">
+              {featured && (
+                <Badge className="bg-white/95 backdrop-blur-sm text-primary text-[10px] font-bold px-2.5 py-1 uppercase tracking-wider border-0 shadow-sm w-fit">
+                  Featured
+                </Badge>
+              )}
+              {is_banned && (
+                <Badge variant="destructive" className="uppercase tracking-wider text-[10px] font-bold px-2.5 py-1 w-fit shadow-sm">
+                  Banned
+                </Badge>
+              )}
+            </div>
 
-            <div className={`ml-auto bg-white/95 backdrop-blur-sm text-foreground px-2 py-1 rounded-full flex items-center gap-1 text-xs font-bold shadow-sm ${!featured ? 'ml-auto' : ''}`}>
+            <div className={`ml-auto bg-white/95 backdrop-blur-sm text-foreground px-2 py-1 rounded-full flex items-center gap-1 text-xs font-bold shadow-sm ${!featured && !is_banned ? 'ml-auto' : ''}`}>
               <Star className="h-3 w-3 text-orange-400 fill-orange-400" />
               {rating.toFixed(1)}
             </div>
