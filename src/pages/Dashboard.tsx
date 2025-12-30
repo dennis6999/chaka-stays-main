@@ -31,6 +31,16 @@ const Dashboard: React.FC = () => {
   // ... state
   const [activeTab, setActiveTab] = useState('overview');
 
+  const [analytics, setAnalytics] = useState({
+    bookingGrowth: 0,
+    revenueGrowth: 0,
+    totalRevenue: 0,
+    totalSpent: 0,
+    totalTrips: 0,
+    totalHostingBookings: 0,
+    monthlyStats: [] as { name: string; revenue: number; bookings: number }[]
+  });
+
   const navigate = useNavigate();
   const location = useLocation();
 
