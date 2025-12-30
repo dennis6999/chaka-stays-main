@@ -11,6 +11,7 @@ interface AppUser {
   avatar_url?: string;
   user_type?: 'guest' | 'host';
   phone?: string;
+  is_admin?: boolean;
 }
 
 interface AuthContextType {
@@ -81,6 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           name: authUser.user_metadata?.full_name,
           avatar_url: authUser.user_metadata?.avatar_url,
           user_type: authUser.user_metadata?.role || 'guest',
+          is_admin: false,
         });
       } else {
         setUser({
@@ -90,6 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           avatar_url: data.avatar_url,
           user_type: data.role || 'guest',
           phone: data.phone,
+          is_admin: data.is_admin, // Map the admin flag
         });
       }
     } catch (error) {

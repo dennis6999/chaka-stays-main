@@ -99,6 +99,12 @@ const Navbar = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56 glass-card border-none mt-2 p-2" align="end" forceMount>
+                  {user.is_admin && (
+                    <DropdownMenuItem onClick={() => navigate('/admin')} className="cursor-pointer rounded-md focus:bg-primary/10 focus:text-primary font-bold">
+                      <User className="mr-2 h-4 w-4 text-primary" />
+                      <span>Admin Panel</span>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={() => navigate('/dashboard')} className="cursor-pointer rounded-md focus:bg-primary/10 focus:text-primary">
                     <User className="mr-2 h-4 w-4" />
                     <span>Dashboard</span>
@@ -170,6 +176,13 @@ const Navbar = () => {
                           <p className="text-xs text-muted-foreground truncate max-w-[150px]">{user.email}</p>
                         </div>
                       </div>
+                      {user.is_admin && (
+                        <SheetClose asChild>
+                          <Link to="/admin" className="flex items-center text-lg font-bold text-primary hover:text-primary/80 transition-colors py-2">
+                            <User className="mr-3 h-5 w-5" /> Admin Panel
+                          </Link>
+                        </SheetClose>
+                      )}
                       <SheetClose asChild>
                         <Link to="/dashboard" className="flex items-center text-lg font-medium hover:text-primary transition-colors py-2">
                           <User className="mr-3 h-5 w-5" /> Dashboard
