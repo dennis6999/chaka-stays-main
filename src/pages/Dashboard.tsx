@@ -23,14 +23,30 @@ import { toast } from 'sonner';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 import { api, Property, Booking } from '../services/api';
-// ... imports
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  AreaChart,
+  Area
+} from 'recharts';
+import { ManageCalendarDialog } from '@/components/ManageCalendarDialog';
 
 const Dashboard: React.FC = () => {
   const { user, loading, logout, refreshUser } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
-  // ... state
-  const [activeTab, setActiveTab] = useState('overview');
-
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [favorites, setFavorites] = useState<Property[]>([]);
   const [analytics, setAnalytics] = useState({
     bookingGrowth: 0,
     revenueGrowth: 0,
@@ -40,6 +56,37 @@ const Dashboard: React.FC = () => {
     totalHostingBookings: 0,
     monthlyStats: [] as { name: string; revenue: number; bookings: number }[]
   });
+  const [activeTab, setActiveTab] = useState('overview');
+
+  // Profile Editing State
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    full_name: '',
+    phone: ''
+  });
+
+  const [showAddProperty, setShowAddProperty] = useState(false);
+  const [newProperty, setNewProperty] = useState({
+    name: '',
+    location: '',
+    price: '',
+    description: '',
+    images: [] as string[],
+    max_guests: '2',
+    bedrooms: '1',
+    beds: '1',
+    baths: '1',
+    amenities: [] as string[],
+    property_type: 'Stays'
+  });
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  // Calendar Dialog State
+  const [calendarProperty, setCalendarProperty] = useState<{ id: string, title: string } | null>(null);
+
+  // Cancellation Dialog State
+  const [bookingToCancel, setBookingToCancel] = useState<string | null>(null);
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
