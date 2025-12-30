@@ -36,14 +36,14 @@ const PropertyCard = ({
 }: PropertyCardProps) => {
   return (
     <Link to={`/property/${id}`} className="block h-full group">
-      <div className="flex flex-col h-full bg-card rounded-2xl border border-border/60 overflow-hidden hover:border-primary/20 transition-all duration-300">
+      <div className="flex flex-col h-full bg-card rounded-2xl border border-border/60 overflow-hidden hover:border-primary/20 transition-all duration-300 active:scale-[0.98]">
         {/* Image - Modern full-width rounded look */}
         <div className="relative aspect-[4/3] md:aspect-[3/2] w-full overflow-hidden bg-gray-100 shadow-sm group-hover:shadow-md transition-all duration-500">
           <div className="absolute inset-0 bg-neutral-200 animate-pulse" />
           <img
             src={image}
             alt={name}
-            className={`absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 ${is_banned ? 'grayscale' : ''}`}
+            className={`absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 ${is_banned ? 'grayscale' : ''}`}
             loading="lazy"
           />
           {/* Gradient Overlay for text contrast if needed, but keeping clean for now */}
