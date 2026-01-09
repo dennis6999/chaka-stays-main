@@ -89,7 +89,7 @@ const Navbar = () => {
 
             {user ? (
               <div className="flex items-center gap-4">
-                <NotificationDropdown />
+                <NotificationDropdown iconClassName={iconColorClass} />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-10 w-10 rounded-full ring-2 ring-primary/20 hover:ring-primary/40 transition-all p-0 overflow-hidden hover:scale-105 duration-300">
@@ -129,7 +129,8 @@ const Navbar = () => {
           </div>
 
           {/* Mobile Menu (Sheet) */}
-          <div className="md:hidden flex items-center z-50">
+          <div className="md:hidden flex items-center gap-2 z-50">
+            {user && <NotificationDropdown iconClassName={mobileMenuIconClass} />}
             <Sheet>
               <SheetTrigger asChild>
                 <Button

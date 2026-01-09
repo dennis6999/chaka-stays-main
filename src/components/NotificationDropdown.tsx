@@ -25,7 +25,11 @@ interface Notification {
     created_at: string;
 }
 
-export const NotificationDropdown = () => {
+interface NotificationDropdownProps {
+    iconClassName?: string;
+}
+
+export const NotificationDropdown = ({ iconClassName }: NotificationDropdownProps) => {
     const { user } = useAuth();
     const navigate = useNavigate();
     const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -89,7 +93,7 @@ export const NotificationDropdown = () => {
         <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative rounded-full">
-                    <Bell className="h-5 w-5 text-muted-foreground" />
+                    <Bell className={`h-5 w-5 ${iconClassName || 'text-muted-foreground'}`} />
                     {unreadCount > 0 && (
                         <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-red-500 rounded-full text-[10px]">
                             {unreadCount}
