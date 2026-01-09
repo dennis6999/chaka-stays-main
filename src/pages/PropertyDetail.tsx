@@ -83,6 +83,11 @@ const PropertyDetail = () => {
   const [reviews, setReviews] = React.useState<Review[]>([]);
   const [disabledDates, setDisabledDates] = React.useState<Date[]>([]);
 
+  // M-Pesa State
+  const [paymentStatus, setPaymentStatus] = React.useState<'idle' | 'processing' | 'success' | 'failed'>('idle');
+  const [phoneNumber, setPhoneNumber] = React.useState('');
+  const [showPaymentInput, setShowPaymentInput] = React.useState(false);
+
   const fetchReviews = async () => {
     if (!id) return;
     try {
@@ -206,20 +211,46 @@ const PropertyDetail = () => {
       return;
     }
 
+    // 1. Show Payment Input if not already shown
+    if (!showPaymentInput) {
+      setShowPaymentInput(true);
+      // Determine nights and total price for UI feedback
+      const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
+      const totalPrice = (property.price_per_night * nights) + 2500; // Including cleaning fee
+      toast.info(`Total to pay: KES ${totalPrice.toLocaleString()}. Please enter your M-Pesa number.`);
+      return;
+    }
+
+    // 2. Validate Phone Number
+    if (!phoneNumber || phoneNumber.length < 10) {
+      toast.error("Please enter a valid M-Pesa phone number");
+      return;
+    }
+
     try {
       setIsBooking(true);
+      setPaymentStatus('processing');
 
-      // 1. Check Availability
+      // 3. Check Availability AGAIN before payment
       const isAvailable = await api.checkAvailability(property.id, checkIn, checkOut);
       if (!isAvailable) {
         toast.error('These dates are no longer available. Please choose another range.');
         setIsBooking(false);
+        setPaymentStatus('idle');
         return;
       }
 
       const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
-      const totalPrice = property.price_per_night * nights; // Add cleaning fee logic later
+      const totalPrice = (property.price_per_night * nights) + 2500; // Add cleaning fee logic later
 
+      // 4. Process Payment (Simulation)
+      toast.loading("Sending STK Push to your phone...");
+      await api.processMpesaPayment(phoneNumber, totalPrice);
+      toast.dismiss();
+      toast.success("Payment Received! Confiming Booking...");
+      setPaymentStatus('success');
+
+      // 5. Create Booking
       await api.createBooking({
         property_id: property.id,
         guest_id: user.id,
@@ -228,11 +259,12 @@ const PropertyDetail = () => {
         total_price: totalPrice
       });
 
-      toast.success('Booking created successfully! Redirecting to dashboard...');
+      toast.success('Booking confirmed! Redirecting to dashboard...');
       setTimeout(() => navigate('/dashboard'), 1500);
 
     } catch (error: any) {
       console.error('Error creating booking:', error);
+      setPaymentStatus('failed');
 
       // Friendly error handling
       if (error.message?.includes('could not choose the best candidate function')) {
@@ -240,7 +272,7 @@ const PropertyDetail = () => {
       } else if (error.message?.includes('violates row-level security')) {
         toast.error('Unable to verify permissions. Please check your login status.');
       } else {
-        toast.error(error.message || 'Failed to create booking. Please try again.');
+        toast.error(error.message || 'Payment failed. Please try again.');
       }
     } finally {
       setIsBooking(false);
@@ -768,121 +800,146 @@ const PropertyDetail = () => {
                     </Select>
                   </div>
 
-                  <Button
-                    className="w-full h-12 text-lg bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
-                    onClick={handleBookNow}
-                    disabled={isBooking}
-                  >
-                    {isBooking ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Checking availability...
-                      </>
-                    ) : (
-                      'Reserve'
-                    )}
-                  </Button>
-
-                  <div className="text-center text-sm text-muted-foreground py-2">
-                    You won't be charged yet
-                  </div>
-
                   {checkIn && checkOut && (
                     <>
-                      <div className="flex justify-between text-muted-foreground pt-4 border-t">
-                        <span>KES {property.price_per_night} x {Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))} nights</span>
-                        <span>KES {(property.price_per_night * Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))).toLocaleString()}</span>
-                      </div>
-                      <div className="flex justify-between text-muted-foreground">
+                      <div className="flex justify-between">
                         <span>Cleaning fee</span>
                         <span>KES 2,500</span>
                       </div>
-                      <div className="flex justify-between text-foreground font-bold pt-4 border-t text-lg">
-                        <span>Total before taxes</span>
-                        <span>KES {(property.price_per_night * Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24)) + 2500).toLocaleString()}</span>
+                      <div className="flex justify-between text-foreground font-bold pt-4 border-t text-lg cursor-pointer hover:underline" onClick={() => setShowPaymentInput(!showPaymentInput)}>
+                        <span>Total (KES)</span>
+                        <span>KES {((property.price_per_night * Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))) + 2500).toLocaleString()}</span>
                       </div>
                     </>
                   )}
-
                 </div>
+
+                {/* Payment Input Section */}
+                {showPaymentInput && (
+                  <div className="animate-in slide-in-from-top-2 fade-in duration-300 bg-emerald-50 dark:bg-emerald-950/30 p-4 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                    <Label className="text-sm font-semibold text-emerald-800 dark:text-emerald-400 mb-2 block">
+                      M-Pesa Phone Number
+                    </Label>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="07XX XXX XXX"
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        className="bg-white dark:bg-black/40 border-emerald-200 focus-visible:ring-emerald-500"
+                      />
+                    </div>
+                    <p className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-2">
+                      A prompt will be sent to your phone to complete the payment.
+                    </p>
+                  </div>
+                )}
+
+                <Button
+                  className={`w-full h-12 text-lg shadow-lg transition-all duration-300 ${showPaymentInput
+                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20'
+                    : 'bg-primary hover:bg-primary/90 shadow-primary/20'
+                    }`}
+                  onClick={handleBookNow}
+                  disabled={isBooking || (showPaymentInput && !phoneNumber)}
+                >
+                  {isBooking ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {paymentStatus === 'processing' ? 'Waiting for M-Pesa...' : 'Processing...'}
+                    </>
+                  ) : (
+                    showPaymentInput ? 'Pay & Book' : 'Reserve'
+                  )}
+                </Button>
+
+                <div className="text-center text-sm text-muted-foreground py-2">
+                  {showPaymentInput ? "Secure M-Pesa Payment" : "You won't be charged yet"}
+                </div>
+                {checkIn && checkOut && (
+                  <div className="flex justify-between text-foreground font-bold pt-4 border-t text-lg">
+                    <span>Total before taxes</span>
+                    <span>KES {(property.price_per_night * Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24)) + 2500).toLocaleString()}</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
-
-          {/* Mobile Fixed Bottom Bar */}
-          <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border z-40 flex items-center justify-between safe-area-bottom shadow-[0_-5px_10px_rgba(0,0,0,0.05)]">
-            <Sheet open={mobileBookingOpen} onOpenChange={setMobileBookingOpen}>
-              <SheetTrigger asChild>
-                <div className="cursor-pointer">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-xl font-bold font-serif text-primary">KES {property.price_per_night}</span>
-                    <span className="text-sm text-muted-foreground">/ night</span>
-                  </div>
-                  <div className={`text-xs underline font-medium ${!checkIn || !checkOut ? 'text-primary animate-pulse decoration-2' : 'text-muted-foreground'}`}>
-                    {checkIn && checkOut ? `${Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))} nights` : 'Select dates'}
-                  </div>
-                </div>
-              </SheetTrigger>
-              <SheetContent side="bottom" className="h-[90vh] flex flex-col rounded-t-xl sm:max-w-none">
-                <SheetHeader className="mb-2">
-                  <SheetTitle>Select Dates</SheetTitle>
-                  <SheetDescription>
-                    Add your travel dates for exact pricing
-                  </SheetDescription>
-                </SheetHeader>
-                <div className="flex-1 overflow-y-auto pb-12 px-1">
-                  <div className="flex flex-col gap-6">
-                    <div className="space-y-3">
-                      <Label className="text-base font-semibold">Check-in Date</Label>
-                      <div className="border rounded-lg p-2 bg-card flex justify-center">
-                        <Calendar
-                          mode="single"
-                          selected={checkIn}
-                          onSelect={(date) => {
-                            setCheckIn(date);
-                            // Reset checkout if it's before new check-in
-                            if (checkOut && date && checkOut <= date) {
-                              setCheckOut(undefined);
-                            }
-                          }}
-                          disabled={(date) => {
-                            if (date < new Date(new Date().setHours(0, 0, 0, 0))) return true;
-                            return disabledDates.some(d => d.toDateString() === date.toDateString());
-                          }}
-                          className="rounded-md"
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-3">
-                      <Label className="text-base font-semibold">Check-out Date</Label>
-                      <div className="border rounded-lg p-2 bg-card flex justify-center">
-                        <Calendar
-                          mode="single"
-                          selected={checkOut}
-                          onSelect={setCheckOut}
-                          disabled={(date) => {
-                            if (checkIn && date <= checkIn) return true;
-                            if (date < new Date(new Date().setHours(0, 0, 0, 0))) return true;
-                            return disabledDates.some(d => d.toDateString() === date.toDateString());
-                          }}
-                          className="rounded-md"
-                        />
-                      </div>
-                    </div>
-                    <SheetClose asChild>
-                      <Button className="w-full mt-2 h-12 text-base shadow-lg bg-primary text-primary-foreground mb-8">Confirm Dates</Button>
-                    </SheetClose>
-                  </div>
-                </div>
-              </SheetContent>
-            </Sheet>
-
-            <Button onClick={handleBookNow} disabled={isBooking} className="bg-primary px-8 shadow-lg shadow-primary/25">
-              {isBooking ? <Loader2 className="h-4 w-4 animate-spin" /> : (!checkIn || !checkOut ? 'Check Availability' : 'Reserve')}
-            </Button>
-          </div>
         </div>
-      </main >
+      </main>
+
+      {/* Mobile Fixed Bottom Bar */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border z-40 flex items-center justify-between safe-area-bottom shadow-[0_-5px_10px_rgba(0,0,0,0.05)]">
+        <Sheet open={mobileBookingOpen} onOpenChange={setMobileBookingOpen}>
+          <SheetTrigger asChild>
+            <div className="cursor-pointer">
+              <div className="flex items-baseline gap-1">
+                <span className="text-xl font-bold font-serif text-primary">KES {property.price_per_night}</span>
+                <span className="text-sm text-muted-foreground">/ night</span>
+              </div>
+              <div className={`text-xs underline font-medium ${!checkIn || !checkOut ? 'text-primary animate-pulse decoration-2' : 'text-muted-foreground'}`}>
+                {checkIn && checkOut ? `${Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))} nights` : 'Select dates'}
+              </div>
+            </div>
+          </SheetTrigger>
+          <SheetContent side="bottom" className="h-[90vh] flex flex-col rounded-t-xl sm:max-w-none">
+            <SheetHeader className="mb-2">
+              <SheetTitle>Select Dates</SheetTitle>
+              <SheetDescription>
+                Add your travel dates for exact pricing
+              </SheetDescription>
+            </SheetHeader>
+            <div className="flex-1 overflow-y-auto pb-12 px-1">
+              <div className="flex flex-col gap-6">
+                <div className="space-y-3">
+                  <Label className="text-base font-semibold">Check-in Date</Label>
+                  <div className="border rounded-lg p-2 bg-card flex justify-center">
+                    <Calendar
+                      mode="single"
+                      selected={checkIn}
+                      onSelect={(date) => {
+                        setCheckIn(date);
+                        // Reset checkout if it's before new check-in
+                        if (checkOut && date && checkOut <= date) {
+                          setCheckOut(undefined);
+                        }
+                      }}
+                      disabled={(date) => {
+                        if (date < new Date(new Date().setHours(0, 0, 0, 0))) return true;
+                        return disabledDates.some(d => d.toDateString() === date.toDateString());
+                      }}
+                      className="rounded-md"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <Label className="text-base font-semibold">Check-out Date</Label>
+                  <div className="border rounded-lg p-2 bg-card flex justify-center">
+                    <Calendar
+                      mode="single"
+                      selected={checkOut}
+                      onSelect={setCheckOut}
+                      disabled={(date) => {
+                        if (checkIn && date <= checkIn) return true;
+                        if (date < new Date(new Date().setHours(0, 0, 0, 0))) return true;
+                        return disabledDates.some(d => d.toDateString() === date.toDateString());
+                      }}
+                      className="rounded-md"
+                    />
+                  </div>
+                </div>
+                <SheetClose asChild>
+                  <Button className="w-full mt-2 h-12 text-base shadow-lg bg-primary text-primary-foreground mb-8">Confirm Dates</Button>
+                </SheetClose>
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+
+        <Button onClick={handleBookNow} disabled={isBooking} className="bg-primary px-8 shadow-lg shadow-primary/25">
+          {isBooking ? <Loader2 className="h-4 w-4 animate-spin" /> : (!checkIn || !checkOut ? 'Check Availability' : 'Reserve')}
+        </Button>
+      </div>
+
       <Footer />
       <AlertDialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
         <AlertDialogContent>
@@ -902,7 +959,7 @@ const PropertyDetail = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div >
+    </div>
   );
 };
 

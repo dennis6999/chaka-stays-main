@@ -467,5 +467,47 @@ export const api = {
 
         if (error) throw error;
         return data;
+    },
+
+    // --- Notifications ---
+
+    async getNotifications() {
+        const { data, error } = await supabase
+            .from('notifications')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        return data;
+    },
+
+    async markNotificationRead(id: string) {
+        const { error } = await supabase
+            .from('notifications')
+            .update({ is_read: true })
+            .eq('id', id);
+
+        if (error) throw error;
+    },
+
+    // --- Payments (Simulation) ---
+
+    async processMpesaPayment(phoneNumber: string, amount: number) {
+        // Simulate network delay for STK Push
+        await new Promise(resolve => setTimeout(resolve, 3000));
+
+        // Simulate success (90% chance)
+        // In a real app, this would be a backend polling mechanism checking for a callback
+        const isSuccess = Math.random() > 0.1;
+
+        if (!isSuccess) {
+            throw new Error("Payment failed or was cancelled by user.");
+        }
+
+        return {
+            success: true,
+            receipt: `MPS${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+            timestamp: new Date().toISOString()
+        };
     }
 };

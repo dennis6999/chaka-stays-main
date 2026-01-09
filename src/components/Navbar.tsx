@@ -18,6 +18,7 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { NotificationDropdown } from './NotificationDropdown';
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -87,34 +88,37 @@ const Navbar = () => {
             </Link>
 
             {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-10 w-10 rounded-full ring-2 ring-primary/20 hover:ring-primary/40 transition-all p-0 overflow-hidden hover:scale-105 duration-300">
-                    <Avatar className="h-full w-full">
-                      <AvatarImage src={user.avatar_url} alt={user.name} />
-                      <AvatarFallback className="bg-primary text-white font-serif">
-                        {user.name?.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56 glass-card border-none mt-2 p-2" align="end" forceMount>
-                  {user.is_admin && (
-                    <DropdownMenuItem onClick={() => navigate('/admin')} className="cursor-pointer rounded-md focus:bg-primary/10 focus:text-primary font-bold">
-                      <User className="mr-2 h-4 w-4 text-primary" />
-                      <span>Admin Panel</span>
+              <div className="flex items-center gap-4">
+                <NotificationDropdown />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-10 w-10 rounded-full ring-2 ring-primary/20 hover:ring-primary/40 transition-all p-0 overflow-hidden hover:scale-105 duration-300">
+                      <Avatar className="h-full w-full">
+                        <AvatarImage src={user.avatar_url} alt={user.name} />
+                        <AvatarFallback className="bg-primary text-white font-serif">
+                          {user.name?.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56 glass-card border-none mt-2 p-2" align="end" forceMount>
+                    {user.is_admin && (
+                      <DropdownMenuItem onClick={() => navigate('/admin')} className="cursor-pointer rounded-md focus:bg-primary/10 focus:text-primary font-bold">
+                        <User className="mr-2 h-4 w-4 text-primary" />
+                        <span>Admin Panel</span>
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem onClick={() => navigate('/dashboard')} className="cursor-pointer rounded-md focus:bg-primary/10 focus:text-primary">
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Dashboard</span>
                     </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem onClick={() => navigate('/dashboard')} className="cursor-pointer rounded-md focus:bg-primary/10 focus:text-primary">
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Dashboard</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10 rounded-md">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Log out</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10 rounded-md">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Log out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             ) : (
               <Button asChild className="rounded-full px-6 bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 transition-all hover:scale-105 hover:shadow-primary/30 active:scale-95 duration-300">
                 <Link to="/auth">
