@@ -183,9 +183,7 @@ const Navbar = () => {
                   <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 px-2">Explore</p>
 
                   {[
-                    { to: '/', label: 'Home', delay: 'delay-100' },
-                    { to: '/properties', label: 'Stays', delay: 'delay-200' },
-                    { to: '/about', label: 'Our Story', delay: 'delay-300' }
+                    { to: '/about', label: 'Our Story', delay: 'delay-100' }
                   ].map((link, i) => (
                     <SheetClose key={link.to} asChild>
                       <Link

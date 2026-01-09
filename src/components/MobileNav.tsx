@@ -46,7 +46,7 @@ const MobileNav = () => {
     ];
 
     return (
-        <div className="md:hidden fixed bottom-6 left-6 right-6 z-[9999]">
+        <div className="md:hidden fixed bottom-6 left-6 right-6 z-40">
             <div className="bg-white/90 dark:bg-zinc-950/90 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-2xl rounded-full px-6 py-4 flex justify-between items-center transition-all duration-300">
                 {navItems.map((item) => {
                     const active = location.pathname + location.search === item.path || (item.path === '/' && location.pathname === '/') || (item.path === '/properties' && location.pathname.startsWith('/properties')) || (item.path.includes('dashboard') && location.pathname === '/dashboard' && location.search.includes(item.path.split('?')[1]));
