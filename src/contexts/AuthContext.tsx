@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Session, User } from '@supabase/supabase-js';
+import { Session, User, AuthError } from '@supabase/supabase-js';
 
 // Extend the Supabase User type or define a wrapper if needed
 // For now, we'll use a custom interface that maps Supabase user to our app's needs
@@ -14,12 +14,20 @@ interface AppUser {
   is_admin?: boolean;
 }
 
+interface RegisterData {
+  email: string;
+  password: string;
+  full_name: string;
+  user_type: 'guest' | 'host';
+  phone?: string;
+}
+
 interface AuthContextType {
   user: AppUser | null;
   session: Session | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<{ error: any }>;
-  register: (data: any) => Promise<{ error: any }>;
+  login: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+  register: (data: RegisterData) => Promise<{ error: AuthError | null }>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
   loginWithGoogle: () => Promise<void>;
@@ -63,7 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [user?.id]);
 
   const fetchProfile = async (authUser: User) => {
     try {
@@ -110,7 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error };
   };
 
-  const register = async (data: any) => {
+  const register = async (data: RegisterData) => {
     const { email, password, full_name, user_type, phone } = data;
 
     // 1. Sign up the user
@@ -131,7 +139,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // 2. Create/Update profile entry (Fallback if Trigger misses metadata)
     if (authData.user) {
-      const updates: any = {};
+      const updates: Record<string, unknown> = {};
       if (phone) updates.phone = phone;
       if (user_type) updates.role = user_type;
 
@@ -185,6 +193,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {

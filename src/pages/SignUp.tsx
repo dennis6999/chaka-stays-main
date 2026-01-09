@@ -64,11 +64,12 @@ const SignUp: React.FC = () => {
         description: 'Please confirm your email address.',
       });
       // Removed navigate('/dashboard') to show success screen
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Registration error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Registration failed. Please try again.';
       toast({
         title: 'Registration Error',
-        description: error.message || 'Registration failed. Please try again.',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {

@@ -32,12 +32,21 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+interface UserProfile {
+    id: string;
+    email?: string;
+    full_name?: string;
+    is_admin?: boolean;
+    created_at: string;
+    role?: string;
+}
+
 const AdminDashboard: React.FC = () => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(true);
     const [stats, setStats] = useState({ users: 0, properties: 0, bookings: 0, revenue: 0 });
-    const [usersList, setUsersList] = useState<any[]>([]);
+    const [usersList, setUsersList] = useState<UserProfile[]>([]);
     const [propertiesList, setPropertiesList] = useState<Property[]>([]);
     const [activeView, setActiveView] = useState<'overview' | 'users' | 'properties'>('overview');
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -63,9 +72,9 @@ const AdminDashboard: React.FC = () => {
             setStats(adminStats);
             setUsersList(allUsers || []);
             setPropertiesList(allProperties || []);
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Admin Load Error", error);
-            const msg = error?.message || "Unknown error";
+            const msg = (error as Error)?.message || "Unknown error";
             toast.error(`Failed to load admin data: ${msg}`);
         } finally {
             setIsLoading(false);
@@ -106,8 +115,10 @@ const AdminDashboard: React.FC = () => {
                 setPropertiesList(prev => prev.map(p => p.id === id ? { ...p, is_banned: false } : p));
                 toast.success("Property Unbanned successfully");
             }
-        } catch (error: any) {
-            toast.error(`Action failed: ${error.message}`);
+        } catch (error: unknown) {
+            console.error("Action failed", error);
+            const msg = (error as Error)?.message || "Unknown error";
+            toast.error(`Action failed: ${msg}`);
         } finally {
             setDialogOpen(false);
             setSelectedProperty(null);
@@ -169,7 +180,15 @@ const AdminDashboard: React.FC = () => {
         </div>
     );
 
-    const StatCard = ({ title, value, icon: Icon, colorClass, trend }: any) => (
+    interface StatCardProps {
+        title: string;
+        value: string | number;
+        icon: React.ElementType;
+        colorClass: string;
+        trend?: string;
+    }
+
+    const StatCard = ({ title, value, icon: Icon, colorClass, trend }: StatCardProps) => (
         <div className="bg-white rounded-xl p-6 shadow-sm border border-neutral/10 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-4">
                 <span className="text-sm font-medium text-muted-foreground">{title}</span>

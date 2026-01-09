@@ -102,17 +102,7 @@ const Dashboard: React.FC = () => {
 
   // ... rest of component
 
-  useEffect(() => {
-    if (loading) return;
-
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-    fetchDashboardData();
-  }, [activeTab, user, loading, navigate]);
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = React.useCallback(async () => {
     if (!user) return;
 
     try {
@@ -129,7 +119,7 @@ const Dashboard: React.FC = () => {
       let hostingRevenue = 0;
       let totalHostingBookings = 0;
       let hostProperties: Property[] = [];
-      let monthlyData: Record<string, { revenue: number; bookings: number }> = {};
+      const monthlyData: Record<string, { revenue: number; bookings: number }> = {};
 
       try {
         hostProperties = await api.getHostProperties(user.id);
@@ -200,7 +190,17 @@ const Dashboard: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user, activeTab]);
+
+  useEffect(() => {
+    if (loading) return;
+
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+    fetchDashboardData();
+  }, [loading, user, navigate, fetchDashboardData]);
 
   const handleSaveProperty = async (e: React.FormEvent) => {
     e.preventDefault();

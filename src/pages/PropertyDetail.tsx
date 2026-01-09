@@ -88,7 +88,7 @@ const PropertyDetail = () => {
   const [phoneNumber, setPhoneNumber] = React.useState('');
   const [showPaymentInput, setShowPaymentInput] = React.useState(false);
 
-  const fetchReviews = async () => {
+  const fetchReviews = React.useCallback(async () => {
     if (!id) return;
     try {
       console.log('Fetching reviews for property:', id);
@@ -98,9 +98,9 @@ const PropertyDetail = () => {
     } catch (error) {
       console.error('Error fetching reviews:', error);
     }
-  };
+  }, [id]);
 
-  const fetchAvailability = async () => {
+  const fetchAvailability = React.useCallback(async () => {
     if (!id) return;
     try {
       const bookings = await api.getPropertyBookings(id);
@@ -114,7 +114,7 @@ const PropertyDetail = () => {
         const end = new Date(endYear, endMonth - 1, endDay);
 
         // Iterate from start to end (inclusive of start, exclusive of end)
-        let current = new Date(start);
+        const current = new Date(start);
         while (current < end) {
           disabled.push(new Date(current));
           current.setDate(current.getDate() + 1);
@@ -124,8 +124,9 @@ const PropertyDetail = () => {
     } catch (error) {
       console.error('Error fetching availability:', error);
     }
-  };
+  }, [id]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [carouselApi, setCarouselApi] = React.useState<any>();
 
   React.useEffect(() => {
@@ -141,7 +142,7 @@ const PropertyDetail = () => {
     return () => {
       carouselApi.off("select", onSelect);
     };
-  }, [carouselApi]);
+  }, [carouselApi, activeImage]);
 
   // Keep this to allow clicking thumbnails to control carousel
   React.useEffect(() => {
@@ -179,7 +180,7 @@ const PropertyDetail = () => {
     fetchReviews();
     fetchAvailability();
     checkFavoriteStatus();
-  }, [id, user]);
+  }, [id, user, fetchReviews, fetchAvailability]);
 
   const checkAuth = () => {
     if (!user) {
@@ -262,17 +263,19 @@ const PropertyDetail = () => {
       toast.success('Booking confirmed! Redirecting to dashboard...');
       setTimeout(() => navigate('/dashboard'), 1500);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating booking:', error);
       setPaymentStatus('failed');
 
+      const errorMessage = error instanceof Error ? error.message : String(error);
+
       // Friendly error handling
-      if (error.message?.includes('could not choose the best candidate function')) {
+      if (errorMessage.includes('could not choose the best candidate function')) {
         toast.error('System Update: Please refresh the page and try again (Availability Check Updated).');
-      } else if (error.message?.includes('violates row-level security')) {
+      } else if (errorMessage.includes('violates row-level security')) {
         toast.error('Unable to verify permissions. Please check your login status.');
       } else {
-        toast.error(error.message || 'Payment failed. Please try again.');
+        toast.error(errorMessage || 'Payment failed. Please try again.');
       }
     } finally {
       setIsBooking(false);
@@ -801,7 +804,7 @@ const PropertyDetail = () => {
                   </div>
 
                   {checkIn && checkOut && (
-                    <>
+                    <div className="space-y-2">
                       <div className="flex justify-between">
                         <span>Cleaning fee</span>
                         <span>KES 2,500</span>
@@ -810,7 +813,7 @@ const PropertyDetail = () => {
                         <span>Total (KES)</span>
                         <span>KES {((property.price_per_night * Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))) + 2500).toLocaleString()}</span>
                       </div>
-                    </>
+                    </div>
                   )}
                 </div>
 

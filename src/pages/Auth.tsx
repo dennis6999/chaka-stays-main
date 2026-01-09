@@ -44,12 +44,14 @@ const Auth: React.FC = () => {
         description: 'You have been signed in successfully.',
       });
       navigate('/dashboard');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Login error:', error);
-      setError(error.message || 'Sign in failed. Please try again.');
+      const err = error as Error;
+      const message = err.message || 'Sign in failed. Please try again.';
+      setError(message);
       toast({
         title: 'Authentication Error',
-        description: error.message || 'Sign in failed. Please try again.',
+        description: message,
         variant: 'destructive',
       });
     } finally {

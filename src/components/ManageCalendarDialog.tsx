@@ -28,14 +28,7 @@ export function ManageCalendarDialog({ propertyId, propertyTitle, isOpen, onClos
     const [selectedRange, setSelectedRange] = useState<DateRange | undefined>();
     const [submitting, setSubmitting] = useState(false);
 
-    useEffect(() => {
-        if (isOpen && propertyId) {
-            fetchBlockedDates();
-            setSelectedRange(undefined);
-        }
-    }, [isOpen, propertyId]);
-
-    const fetchBlockedDates = async () => {
+    const fetchBlockedDates = React.useCallback(async () => {
         if (!propertyId) return;
         try {
             setLoading(true);
@@ -47,7 +40,14 @@ export function ManageCalendarDialog({ propertyId, propertyTitle, isOpen, onClos
         } finally {
             setLoading(false);
         }
-    };
+    }, [propertyId]);
+
+    useEffect(() => {
+        if (isOpen && propertyId) {
+            fetchBlockedDates();
+            setSelectedRange(undefined);
+        }
+    }, [isOpen, propertyId, fetchBlockedDates]);
 
     const handleBlockDates = async () => {
         if (!propertyId || !selectedRange?.from || !selectedRange?.to) return;

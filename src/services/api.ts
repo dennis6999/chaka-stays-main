@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { PostgrestError } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 
 export interface Property {
@@ -65,7 +66,7 @@ export const api = {
         const { data, error } = await Promise.race([
             fetchPromise,
             timeout(10000)
-        ]) as any;
+        ]) as { data: Property[] | null; error: PostgrestError | null };
 
         if (error) throw error;
         return data as Property[];
@@ -81,7 +82,7 @@ export const api = {
         const { data, error } = await Promise.race([
             fetchPromise,
             timeout(10000)
-        ]) as any;
+        ]) as { data: Property[] | null; error: PostgrestError | null };
 
         if (error) throw error;
         return data as Property[];
